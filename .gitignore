@@ -1,0 +1,52 @@
+# === macOS specific ===
+
+# Finder metadata
+.DS_Store
+
+# macOS folder attributes
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Icon files
+.Spotlight-V100
+.Trashes
+.VolumeIcon.icns
+
+# === IntelliJ IDEA specific ===
+
+# IntelliJ project files and folders
+.idea/
+*.iml
+*.iws
+out/
+
+# OS generated files (for all systems)
+*.log
+
+# === Terraform specific ===
+
+# Terraform local state files
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+
+# Exclude Terraform's .terraform directory which contains providers and modules downloaded by Terraform
+**/.terraform/
+
+# Sensitive variable files (uncomment if you don't want to commit your terraform variables)
+# *.tfvars
+# *.tfvars.json
+
+# CLI config files
+.terraformrc
+terraform.rc
+
+# Override tfvars files with local settings (optional)
+# *.auto.tfvars

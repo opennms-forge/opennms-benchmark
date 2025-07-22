@@ -1,0 +1,12 @@
+---
+- name: reload sysctl
+  command: /sbin/sysctl --system
+
+- name: reload chrony
+  service: name=chrony state=restarted
+
+- name: reload sshd
+  service: name=ssh state=restarted
+
+- name: reload journald
+  service: name=systemd-journald state=restarted
