@@ -122,10 +122,10 @@ sudo ip r a 10.42.0.0/16 via 192.0.2.134
 ```
 ## 🕹️ Usage
 
-Add your public SSH key in the benchmark-lab.sh script variable:
+Export your public SSH key in an enviornment variable SSH_PUBLIC_KEY:
 
 ```
-SSH_PUBLIC_KEY="ssh-rsa your-public-key-here-.... you@your-host.local"
+export SSH_PUBLIC_KEY=$(cat ~/.ssh/id_rsa.pub)"
 ```
 
 Deploy the lab in Azure using az cli.
