@@ -120,3 +120,34 @@ To access the 10.42.0.0/16 network a static route needs to be installed.
 ```bash
 sudo ip r a 10.42.0.0/16 via 192.0.2.134
 ```
+## 🕹️ Usage
+
+Add your public SSH key in the benchmark-lab.sh script variable:
+
+```
+SSH_PUBLIC_KEY="ssh-rsa your-public-key-here-.... you@your-host.local"
+```
+
+Deploy the lab in Azure using az cli.
+
+```bash
+cd azcli
+./benchmark-lab.sh
+```
+
+Get the public IP address for SSH to the monitoring server to bootstrap the stack
+
+```bash
+cd ansible
+vi bootstrap
+```
+
+Add you public IP for the `mon ansible_host=""`
+
+Initialize the project files and deploy the stack
+
+```bash
+cd ansible
+ansible-playbook -i bootstrap site.yaml
+```
+

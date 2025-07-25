@@ -5,10 +5,17 @@ ENVIRONMENT="dev"
 LOCATION="eastus"
 RESOURCE_GROUP="rg-${ENVIRONMENT}-${PROJECT_NAME}"
 PROXIMITY_PLACEMENT_GROUP="ppg-${LOCATION}-${ENVIRONMENT}-${PROJECT_NAME}"
-SSH_PUBLIC_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAEAQDXyg6oRO8Vac970y+gkJC4GTIQ3LKdschTB6Rbij8bm0aHWxa4JX472olCpkihKHl6amaSCfZsoK1DfTbTwSWE1idKoEKgSeh7qndgG4Od+INwYEORxvKTHMCQUeqozQA/K64SzyGRL+OBPKrVCfgmf8tzXCqwYYzwHhVG2lYIyW+Kh81gCGkxe8L7j5psvF5JVt5PXV3Y+0qDmJpVnDyua6J73O/l8O3NwJWo3fEmT9ami7sdoZy8dWKd3/pVFF6bunnd6VS0sFrdppThh6G0c9vac3S7mYIGOv76tkOkgADl1w56j6LbbNewCq8TaZvGutUnqpUXSGVqDiNNDwilLJruoCemenCYCqFouozkDEaTqMpXoLQKWAFPLnpRUfBlvYydXv7IV5xHy4wfGixClJ0/FXYle/4mXrA8hj0+PCp5uLLmo+G42Wem2F4YlNG1oNUFX9FuENYrL0j6IfgVZDQStFq6RhQEJsXFMvGbF5rNOYHfgx+bMS4ALa5fkSRIl/NMM1TyD1yURbwxxlHdjQQDTQuCHs0fEYVtleY237HsHK8yAlnRNf+4fK4ZD/qn7Di5WZhbJ5h5tPaxhrRX9A01kf+dEUyENPU8pGgcis2QdkzlP4c1GR7tgjACT38FAa5n1XiaFozT/qSaOBNcCcgIBYeRNF0XQSOYOT3WJkfHRKd0LWneZdsOgjZP92nfNzmEKYAeW0jcpdJOfSss7VkfsqswhpmmOkEwKUwwkb/MSSK8p0d7Lqmx1JTJqQYHd9Ih6oecE9isR8b7kHRNoi2mV3j5fTqmxvSUgkbLQX98il08YAuTQ5i+Hh2dkbJMXuMrrALVunnWtqBrQ0w+WkL06t9JlMe1/Rl+AD286vSClfxCTwK2vke8l98zlLfOrZ2UZ9cvrxZiEIX4Y1Elg3m9bbd/iGnUm4WnN/5b/88W6sp9jGDNWqfqM9sVHUVjumpXjijXOX0NYJxBSQlULT4bnPF/MJUOHvhqdJQ2OnM8FMrGBHatbsCUYBFa1W30bDvwaClVfg5vBazOrr6V1D7ACtp4iLBheDK4H8o+OQbYfZWkLoBjHxi8+0rG/pYijfP3KqmnEBnF9D3I6BlgNPT+KAufSg4Nf4Iyi84ABPPMukHisfbNizjju1+rnC/BVEE3PmaYJhD2MGYxjVq/eYvFeRhFCkU7vy5lXCM1K6Yzs0PKOLbMd8o5pVftHbUZgV1LerLeu0coyJ44RvWJPyNGCHdtBF9tTNSDZFDKCF4nKRVU247xWKBKLEXImg0ytQWSWHlhKzeMbkcEzZuUjKFpZzRCtRrICn8T7Z8QmoIRmm+MPrJzcCm1Jpb5ilp1LrQovquhNgR8P5ysu705 indigo@blinky-2.local"
 SIZE="Standard_B4ls_v2"
 PRIORITY="Spot" # Regular, Spot"
 ALLOW_SSH_CIDR="$(host -4 myip.opendns.com resolver1.opendns.com | grep "has address" | awk '{print $4}')/32"
+
+if [ "${SSH_PUBLIC_KEY}" = "" ]; then
+    echo "SSH_PUBLIC_KEY is not set."
+    echo "Add your public SSH key in the variable SSH_PUBLIC_KEY."
+    echo ""
+    echo "  export SSH_PUBLIC_KEY=\$(cat ~/.ssh/id_rsa.pub)"
+    exit 1
+fi
 
 resourceGroupConfig() {
   az group create \

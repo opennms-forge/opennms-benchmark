@@ -3,6 +3,11 @@
   timezone:
     name: "{{ timezone }}"
 
+- name: Update APT cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
 - name: Copy user settings to /home/azureuser
   copy: src=files/home/{{ item }} dest=/home/azureuser/ owner=azureuser group=azureuser mode=0644
   with_items:
