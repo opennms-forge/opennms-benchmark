@@ -1,19 +1,19 @@
 ---
 - name: Setup Ansible Inventory
   ansible.builtin.copy:
-    src: benchmark-stack.yaml
-    dest: /home/azureuser/ansible-opennms/inventory/benchmark-stack.yaml
+    src: benchmark-stack.yml
+    dest: /home/azureuser/ansible-opennms/inventory/benchmark-stack.yml
   tags: [ "stack" ]
 
 - name: Configure stack
   ansible.builtin.template:
-    src: stack-vars.yaml.j2
-    dest: /home/azureuser/ansible-opennms/stack-vars.yaml
+    src: stack-vars.yml.j2
+    dest: /home/azureuser/ansible-opennms/group_vars/opennms-stack/vars.yml
   tags: [ "stack" ]
 
 - name: Deploy Benchmark Stack
   ansible.builtin.command:
     chdir: /home/azureuser/ansible-opennms
-    cmd: 'ansible-playbook -u azureuser -i inventory/benchmark-stack.yaml opennms-playbook.yml --extra-vars "@stack-vars.yaml"'
+    cmd: 'ansible-playbook -u azureuser -i inventory/benchmark-stack.yml opennms-playbook.yml'
     creates: /home/azureuser/.stack-deployed.lock
   tags: [ "stack" ]

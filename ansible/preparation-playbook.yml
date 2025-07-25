@@ -1,4 +1,4 @@
-## file: opennms-playbook.yaml
+## file: opennms-playbook.yml
 
 - name: Basic configuration and tooling
   hosts: all

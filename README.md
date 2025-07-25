@@ -148,6 +148,6 @@ Initialize the project files and deploy the stack
 
 ```bash
 cd ansible
-ansible-playbook -i bootstrap site.yaml
+ansible-playbook -i bootstrap site.yml
 ```
 

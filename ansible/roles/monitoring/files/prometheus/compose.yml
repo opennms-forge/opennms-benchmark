@@ -20,12 +20,12 @@ services:
     environment:
       TZ: UTC
     command:
-      - --config.file=/etc/prometheus/prometheus.yaml
+      - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-remote-write-receiver
       - --storage.tsdb.retention.time=90d
     user: "65534"
     volumes:
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - data-prometheus:/prometheus/data
     ports:
       - "9090:9090/tcp"

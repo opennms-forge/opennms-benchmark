@@ -1,4 +1,0 @@
-# file: site.yaml
-
-- name: Local testing playbook
-  import_playbook: preparation-playbook.yaml

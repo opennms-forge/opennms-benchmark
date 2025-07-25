@@ -7,16 +7,16 @@
 
 - name: Prometheus configuration
   ansible.builtin.copy:
-    src: prometheus/prometheus.yaml
-    dest: /etc/docker/prometheus/prometheus.yaml
+    src: prometheus/prometheus.yml
+    dest: /etc/docker/prometheus/prometheus.yml
   notify:
     - restart prometheus
   tags: [ "monitoring", "prometheus" ]
 
 - name: Create Prometheus compose
   ansible.builtin.copy:
-    src: prometheus/compose.yaml
-    dest: /etc/docker/prometheus/compose.yaml
+    src: prometheus/compose.yml
+    dest: /etc/docker/prometheus/compose.yml
   notify:
     - restart prometheus
   tags: [ "monitoring", "prometheus" ]
@@ -44,8 +44,8 @@
 
 - name: Create Grafana compose
   ansible.builtin.copy:
-    src: grafana/compose.yaml
-    dest: /etc/docker/grafana/compose.yaml
+    src: grafana/compose.yml
+    dest: /etc/docker/grafana/compose.yml
   notify:
     - restart grafana
   tags: [ "monitoring", "grafana" ]
@@ -65,8 +65,8 @@
 
 - name: Create Jaeger compose
   ansible.builtin.copy:
-    src: jaeger/compose.yaml
-    dest: /etc/docker/jaeger/compose.yaml
+    src: jaeger/compose.yml
+    dest: /etc/docker/jaeger/compose.yml
   notify:
     - restart grafana
   tags: [ "monitoring", "jaeger" ]
