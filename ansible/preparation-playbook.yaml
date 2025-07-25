@@ -1,0 +1,20 @@
+## file: opennms-playbook.yaml
+
+- name: Basic configuration and tooling
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Monitoring services
+  hosts: monitoring
+  become: true
+  roles:
+    - docker-ce
+    - monitoring
+
+- name: Project setup
+  hosts: project_files
+  roles:
+    - project-init
+    - opennms-stack

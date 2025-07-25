@@ -1,0 +1,6 @@
+---
+repo_uri: https://download.docker.com/linux/ubuntu
+repo_uri_pubkey: "{{ repo_uri }}/gpg"
+repo_suite: noble
+repo_components: stable
+repo_signed_by: /etc/apt/keyrings/docker.asc

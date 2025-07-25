@@ -1,2 +1,3 @@
 ---
-timezone: 'UTC'
+git_repo_benchmark: "https://github.com/opennms-forge/opennms-benchmark.git"
+git_repo_ansible_opennms: "https://github.com/opennms-forge/ansible-opennms.git"

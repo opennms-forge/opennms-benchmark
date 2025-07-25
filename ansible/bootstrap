@@ -1,0 +1,5 @@
+[monitoring]
+mon ansible_host="172.172.180.182"
+
+[project_files]
+mon ansible_host="172.172.180.182"

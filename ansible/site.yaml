@@ -1,4 +1,4 @@
-# file: site.yml
+# file: site.yaml
 
 - name: Local testing playbook
-  import_playbook: preparation-playbook.yml
+  import_playbook: preparation-playbook.yaml

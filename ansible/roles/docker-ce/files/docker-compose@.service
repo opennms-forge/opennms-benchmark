@@ -1,0 +1,13 @@
+[Unit]
+Description=%i service with docker compose
+Requires=containerd.service
+After=containerd.service
+
+[Service]
+WorkingDirectory=/etc/docker/%i
+ExecStart=/usr/bin/docker compose up
+ExecStop=/usr/bin/docker compose down
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,80 @@
+---
+- name: Create Prometheus directory
+  ansible.builtin.file:
+    path: /etc/docker/prometheus
+    state: directory
+  tags: [ "monitoring", "prometheus" ]
+
+- name: Prometheus configuration
+  ansible.builtin.copy:
+    src: prometheus/prometheus.yaml
+    dest: /etc/docker/prometheus/prometheus.yaml
+  notify:
+    - restart prometheus
+  tags: [ "monitoring", "prometheus" ]
+
+- name: Create Prometheus compose
+  ansible.builtin.copy:
+    src: prometheus/compose.yaml
+    dest: /etc/docker/prometheus/compose.yaml
+  notify:
+    - restart prometheus
+  tags: [ "monitoring", "prometheus" ]
+
+- name: Enable Prometheus as a service
+  ansible.builtin.service:
+    name: docker-compose@prometheus.service
+    state: started
+    enabled: true
+  tags: [ "monitoring", "prometheus" ]
+
+- name: Create Grafana directory
+  ansible.builtin.file:
+    path: /etc/docker/grafana
+    state: directory
+  tags: [ "monitoring", "grafana" ]
+
+- name: Grafana provisioning
+  ansible.builtin.copy:
+    src: grafana/provisioning
+    dest: /etc/docker/grafana
+  notify:
+    - restart grafana
+  tags: [ "monitoring", "grafana" ]
+
+- name: Create Grafana compose
+  ansible.builtin.copy:
+    src: grafana/compose.yaml
+    dest: /etc/docker/grafana/compose.yaml
+  notify:
+    - restart grafana
+  tags: [ "monitoring", "grafana" ]
+
+- name: Enable Grafana as a service
+  ansible.builtin.service:
+    name: docker-compose@grafana.service
+    state: started
+    enabled: true
+  tags: [ "monitoring", "grafana" ]
+
+- name: Create Jaeger directory
+  ansible.builtin.file:
+    path: /etc/docker/jaeger
+    state: directory
+  tags: [ "monitoring", "jaeger" ]
+
+- name: Create Jaeger compose
+  ansible.builtin.copy:
+    src: jaeger/compose.yaml
+    dest: /etc/docker/jaeger/compose.yaml
+  notify:
+    - restart grafana
+  tags: [ "monitoring", "jaeger" ]
+
+- name: Enable Jaeger as a service
+  ansible.builtin.service:
+    name: docker-compose@jaeger.service
+    state: started
+    enabled: true
+  tags: [ "monitoring", "jaeger" ]
+

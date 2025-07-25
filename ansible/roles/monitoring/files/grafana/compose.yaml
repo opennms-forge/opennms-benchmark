@@ -1,0 +1,24 @@
+---
+services:
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    deploy:
+      resources:
+        limits:
+          cpus: 2.0
+          memory: 512m
+    environment:
+      TZ: UTC
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: opennms-opennms-app
+      GF_FEATURE_TOGGLES_ENABLE: nestedFolders
+    volumes:
+      - data-grafana:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000/tcp"
+
+volumes:
+  data-grafana: {}

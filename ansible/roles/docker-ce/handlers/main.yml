@@ -1,0 +1,8 @@
+---
+- name: restart docker
+  service:
+    name: docker.service
+    state: restarted
+
+- name: reload systemd
+  command: systemctl daemon-reload

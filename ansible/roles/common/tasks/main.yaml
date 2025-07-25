@@ -1,0 +1,81 @@
+---
+- name: "Set Time Zone to {{ timezone }}"
+  timezone:
+    name: "{{ timezone }}"
+
+- name: Copy user settings to /home/azureuser
+  copy: src=files/home/{{ item }} dest=/home/azureuser/ owner=azureuser group=azureuser mode=0644
+  with_items:
+   - ".bash_aliases"
+   - ".bashrc"
+   - ".htoprc"
+   - ".screenrc"
+
+- name: Copy user settings to /root
+  copy: src=files/home/{{ item }} dest=/root/ owner=root group=root mode=0644
+  with_items:
+   - ".bash_aliases"
+   - ".bashrc"
+   - ".htoprc"
+   - ".screenrc"
+
+- name: Copy issues.net /etc
+  copy: src=files/etc/{{ item }} dest=/etc/ owner=root group=root mode=0644
+  with_items:
+   - "issue.net"
+
+- name: Ensures sshd_config.d exists
+  file: path=/etc/ssh/sshd_config.d mode=755 state=directory
+  notify:
+    - reload sshd
+  tags: [ "ssh" ]
+
+- name: Copy custom sshd_config /etc/ssh
+  copy: src=files/etc/ssh/sshd_config.d/custom.conf dest=/etc/ssh/sshd_config.d owner=root group=root mode=0600
+  notify:
+    - reload sshd
+  tags: [ "ssh" ]
+
+- name: Configure journald
+  copy: src=files/etc/systemd/journald.conf dest=/etc/systemd/ owner=root group=root mode=0644
+  notify:
+    - reload journald
+  tags: [ "journald" ]
+
+- name: "Install dependencies"
+  tags: [ "system", "tools" ]
+  apt:
+    pkg:
+      - ansible
+      - apt-listchanges
+      - apt-transport-https
+      - bzip2
+      - btop
+      - cron
+      - chrony
+      - curl
+      - debian-goodies
+      - git-core
+      - htop
+      - iftop
+      - iotop
+      - iperf3
+      - iptraf
+      - less
+      - lm-sensors
+      - mailutils
+      - moreutils
+      - mtr
+      - needrestart
+      - ripgrep
+      - rkhunter
+      - rsyslog
+      - screen
+      - smartmontools
+      - snmp
+      - software-properties-common
+      - sudo
+      - sysfsutils
+      - sysstat
+      - vim-nox
+    state: present
