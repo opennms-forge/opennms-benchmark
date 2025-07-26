@@ -1,0 +1,87 @@
+---
+- name: Add the OS specific variables
+  include_vars: '{{ ansible_os_family }}.yml'
+  tags: [ "net-snmp" ]
+
+- name: Install the required packages
+  ansible.builtin.apt:
+    name: "{{ snmpd_service_name }}"
+    state: "{{ snmpd_pkg_state }}"
+  when: ansible_os_family == 'Debian'
+  tags: [ "net-snmp" ]
+
+- name: Ensures {{ snmpd_include_dir }} dir exists
+  ansible.builtin.file:
+    path: "{{ snmpd_include_dir }}"
+    state: directory
+  tags: [ "net-snmp" ]
+
+- name: Ensures {{ snmpd_extend_dir }} dir exists
+  ansible.builtin.file:
+    path: "{{ snmpd_extend_dir }}"
+    state: directory
+  tags: [ "net-snmp" ]
+
+- name: Set snmpd default settings
+  ansible.builtin.copy:
+    src: files/etc/snmpd.default
+    dest: /etc/default/snmpd
+    owner: root
+    group: root
+    mode: "0640"
+  tags: [ "net-snmp" ]
+
+- name: Copy the snmpd.conf template file
+  ansible.builtin.template:
+    src: snmpd.conf.j2
+    dest: /etc/snmp/snmpd.conf
+  notify:
+  - restart {{ snmpd_service_name }}
+  tags: [ "net-snmp" ]
+
+- name: Copy the active monitoring template file
+  ansible.builtin.template:
+    src: active.conf.j2
+    dest: "{{ snmpd_include_dir }}/active.conf"
+  notify:
+  - restart {{ snmpd_service_name }}
+  tags: [ "net-snmp" ]
+  
+- name: Enable disk monitoring
+  ansible.builtin.template:
+    src: disk.conf.j2
+    dest: "{{ snmpd_include_dir }}/disk.conf"
+  notify:
+  - restart {{ snmpd_service_name }}
+  tags: [ "net-snmp" ]
+
+- name: Enable process monitoring
+  ansible.builtin.template:
+    src: proc.conf.j2
+    dest: "{{ snmpd_include_dir }}/proc.conf"
+  notify:
+  - restart {{ snmpd_service_name }}
+  tags: [ "net-snmp" ]
+
+- name: Copy the Trap Inform template file
+  ansible.builtin.template:
+    src: inform.conf.j2
+    dest: "{{ snmpd_include_dir }}/inform.conf"
+  notify:
+  - restart {{ snmpd_service_name }}
+  tags: [ "net-snmp" ]
+
+- name: Copy the sysinfo inform template file
+  ansible.builtin.template:
+    src: sysinfo.conf.j2
+    dest: "{{ snmpd_include_dir }}/sysinfo.conf"
+  notify:
+  - restart {{ snmpd_service_name }}
+  tags: [ "net-snmp" ]
+
+- name: Ensure snmpd is running and enabled
+  ansible.builtin.service:
+    name: "{{ snmpd_service_name }}"
+    state: "{{ snmpd_service_state }}"
+    enabled: "{{ snmpd_service_enabled }}"
+  tags: [ "net-snmp" ]

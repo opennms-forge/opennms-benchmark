@@ -283,3 +283,23 @@ networking "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"
 nics "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"
 compute "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}" "${PROXIMITY_PLACEMENT_GROUP}" "${SSH_PUBLIC_KEY}" "${PRIORITY}"
 nsg "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}" "${ALLOW_SSH_CIDR}"
+
+##
+# az network route-table create \
+#   --resource-group rg-dev-benchmark \
+#   --location eastus \
+#   --name route-netsim
+#
+# az network route-table route create \
+#   --resource-group rg-dev-benchmark \
+#   --route-table-name route-netsim \
+#   --name route-netsim \
+#   --address-prefix 10.42.0.0/16 \
+#   --next-hop-type VirtualAppliance \
+#   --next-hop-ip-address 192.0.2.134
+#
+# az network vnet subnet update \
+#   --resource-group rg-dev-benchmark \
+#   --vnet-name vnet-eastus-dev-lab \
+#   --route-table route-netsim \
+#   --name subnet-sim

@@ -18,3 +18,9 @@
   roles:
     - project-init
     - opennms-stack
+
+- name: SNMP-Simulator
+  hosts: net_sim
+  become: true
+  roles:
+    - net-snmp

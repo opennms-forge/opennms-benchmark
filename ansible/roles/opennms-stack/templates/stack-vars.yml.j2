@@ -14,7 +14,7 @@ postgres_password: oth3rP455w0rd!
 postgres_listen_addresses: '*'
 postgres_hba_permissions_v4: "192.0.2.0/24"
 
-kafka_bootstrap_servers: 192.0.2.68:9092
+kafka_bootstrap_servers: "{{ kafka_bootstrap_servers }}"
 
 opennms_message_broker: kafka
 
@@ -37,7 +37,7 @@ kafka_server_properties:
   "controller.quorum.voters": 1@localhost:9093
   listeners: PLAINTEXT://:9092,CONTROLLER://:9093
   "inter.broker.listener.name": PLAINTEXT
-  "advertised.listeners": "PLAINTEXT://{{ kafka_bootstrap_servers }}:9092"
+  "advertised.listeners": "PLAINTEXT://{{ kafka_bootstrap_servers }}"
   "controller.listener.names": CONTROLLER
   "listener.security.protocol.map": CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL
   "num.network.threads": 3

@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+
+# Disk Monitoring
+
+{% for disk in snmpd_disks %}
+disk {{ disk }}
+{% endfor %}
