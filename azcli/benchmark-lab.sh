@@ -32,7 +32,7 @@ resourceGroupConfig() {
 networking() {
   az network public-ip create \
     --resource-group "${1}" \
-    --name "net-${2}-${3}-publicip" \
+    --name "net-${2}-${3}-mon-publicip" \
     --allocation-method Static \
     --sku Standard
 
@@ -166,12 +166,12 @@ nics() {
       --vnet-name "vnet-${2}-${3}-lab" \
       --subnet subnet-mgmt
 
-    # Assign public IP to monitoring node as an entry
+    # Monitoring: Assign public IP to monitoring node as an entry
     az network nic ip-config update \
       --resource-group "${1}" \
       --nic-name "nic-${2}-${3}-mon-vnet-mgmt" \
       --name ipconfig1 \
-      --public-ip-address "net-${2}-${3}-publicip"
+      --public-ip-address "net-${2}-${3}-mon-publicip"
 }
 
 compute() {
@@ -179,7 +179,7 @@ compute() {
     --resource-group "${1}" \
     --name database \
     --location "${2}" \
-    --nics "nic-${2}-${3}-database-vnet-db" "nic-${2}-${3}-database-vnet-mgmt" \
+    --nics "nic-${2}-${3}-database-vnet-mgmt" "nic-${2}-${3}-database-vnet-db" \
     --image Canonical:ubuntu-24_04-lts:server:latest \
     --admin-username azureuser \
     --size "${SIZE}" \
@@ -192,7 +192,7 @@ compute() {
     --resource-group "${1}" \
     --name core \
     --location "${2}" \
-    --nics "nic-${2}-${3}-core-vnet-db" "nic-${2}-${3}-core-vnet-mgmt" "nic-${2}-${3}-core-vnet-kafka"\
+    --nics "nic-${2}-${3}-core-vnet-mgmt" "nic-${2}-${3}-core-vnet-db" "nic-${2}-${3}-core-vnet-kafka"\
     --image Canonical:ubuntu-24_04-lts:server:latest \
     --admin-username azureuser \
     --size "${SIZE}" \
@@ -255,15 +255,11 @@ compute() {
 }
 
 nsg() {
+  # Monitoring
   az network nsg create \
     --resource-group "${1}" \
     --location "${2}" \
     --name "nsg-nic-${2}-${3}-mon-vnet-mgmt"
-
-  az network nic update \
-    --resource-group "${1}" \
-    --name "nic-${2}-${3}-mon-vnet-mgmt" \
-    --network-security-group "nsg-nic-${2}-${3}-mon-vnet-mgmt"
 
   az network nsg rule create \
     --resource-group "${1}" \
@@ -276,6 +272,45 @@ nsg() {
     --protocol Tcp \
     --source-address-prefixes ${4} \
     --destination-address-prefixes '*'
+
+  az network nic update \
+    --resource-group "${1}" \
+    --name "nic-${2}-${3}-mon-vnet-mgmt" \
+    --network-security-group "nsg-nic-${2}-${3}-mon-vnet-mgmt"
+}
+
+routing () {
+  az network route-table create \
+     --resource-group "${1}" \
+     --location "${2}" \
+     --name route-netsim
+
+   az network route-table route create \
+     --resource-group "${1}" \
+     --route-table-name route-netsim \
+     --name route-netsim \
+     --address-prefix 10.42.0.0/16 \
+     --next-hop-type VirtualAppliance \
+     --next-hop-ip-address 192.0.2.134
+
+  az network vnet subnet update \
+     --resource-group "${1}" \
+     --vnet-name vnet-${2}-${3}-lab \
+     --route-table route-netsim \
+     --name subnet-sim
+}
+
+dns() {
+  az network private-dns zone create \
+    --resource-group "${1}" \
+    --name lab.local
+
+  az network private-dns link vnet create \
+    --resource-group "${1}" \
+    -n MyVnetLink \
+    --zone-name lab.local \
+    --virtual-network vnet-${2}-${3}-lab \
+    --registration-enabled true
 }
 
 resourceGroupConfig "${RESOURCE_GROUP}" "${LOCATION}" "${PROXIMITY_PLACEMENT_GROUP}"
@@ -283,23 +318,5 @@ networking "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"
 nics "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"
 compute "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}" "${PROXIMITY_PLACEMENT_GROUP}" "${SSH_PUBLIC_KEY}" "${PRIORITY}"
 nsg "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}" "${ALLOW_SSH_CIDR}"
-
-##
-# az network route-table create \
-#   --resource-group rg-dev-benchmark \
-#   --location eastus \
-#   --name route-netsim
-#
-# az network route-table route create \
-#   --resource-group rg-dev-benchmark \
-#   --route-table-name route-netsim \
-#   --name route-netsim \
-#   --address-prefix 10.42.0.0/16 \
-#   --next-hop-type VirtualAppliance \
-#   --next-hop-ip-address 192.0.2.134
-#
-# az network vnet subnet update \
-#   --resource-group rg-dev-benchmark \
-#   --vnet-name vnet-eastus-dev-lab \
-#   --route-table route-netsim \
-#   --name subnet-sim
+routing "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"
+dns "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"

@@ -4,7 +4,9 @@
   hosts: all
   become: true
   roles:
+    - apt-update
     - common
+    - prometheus.prometheus.node_exporter
 
 - name: Monitoring services
   hosts: monitoring
@@ -13,14 +15,8 @@
     - docker-ce
     - monitoring
 
-- name: Project setup
-  hosts: project_files
-  roles:
-    - project-init
-    - opennms-stack
-
 - name: SNMP-Simulator
-  hosts: net_sim
+  hosts: snmp_sim
   become: true
   roles:
     - net-snmp

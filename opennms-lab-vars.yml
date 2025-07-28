@@ -1,6 +1,6 @@
 ---
 opennms_distribution: Horizon
-opennms_version: "{{ opennms_version }}"
+opennms_version: "33.1.8"
 opennms_pkg_version: "{{ opennms_version }}*"
 
 opennms_datasource_db_host: 192.0.2.4
@@ -14,7 +14,7 @@ postgres_password: oth3rP455w0rd!
 postgres_listen_addresses: '*'
 postgres_hba_permissions_v4: "192.0.2.0/24"
 
-kafka_bootstrap_servers: "{{ kafka_bootstrap_servers }}"
+kafka_bootstrap_servers: "192.0.2.68:9092"
 
 opennms_message_broker: kafka
 

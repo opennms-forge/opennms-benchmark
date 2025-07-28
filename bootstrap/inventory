@@ -1,0 +1,13 @@
+[all]
+database ansible_host="192.0.2.196"
+core ansible_host="192.0.2.197"
+kafka ansible_host="192.0.2.198"
+minion ansible_host="192.0.2.199"
+mon ansible_host="192.0.2.200"
+snmpsim ansible_host="192.0.2.201"
+
+[monitoring]
+mon ansible_host="192.0.2.200"
+
+[snmp_sim]
+snmpsim ansible_host="192.0.2.201"

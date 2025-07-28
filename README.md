@@ -135,19 +135,52 @@ cd azcli
 ./benchmark-lab.sh
 ```
 
-Get the public IP address for SSH to the monitoring server to bootstrap the stack
+Enable IPv4 forwarding
+
+SSH to the public IP for the monitoring host and install tailscale. Enable IPv4 forwarding and advertise the management network. You need to approve the advertised route in the machines "Edit Routes" section.
 
 ```bash
-cd ansible
-vi bootstrap
+sysctl -w net.ipv4.ip_forward=1
 ```
 
-Add you public IP for the `mon ansible_host=""`
+```
+sudo tailscale up --accept-routes --advertise-routes=192.0.2.192/26
+```
 
-Initialize the project files and deploy the stack
+Test connectivity to the monitoring VM's management IP
+
+```
+ping 192.0.2.200
+```
+
+Initialize the virtual machines
 
 ```bash
-cd ansible
-ansible-playbook -i bootstrap site.yml
+cd bootstrap
+ansible-playbook -i inventory preparation-playbook.yml
 ```
 
+Add routing entries for the SNMP simulation network
+
+SNMP Simulator
+```bash
+ssh azureuser@192.0.2.201 "sudo ip route add local 10.42.0.0/16 dev lo"
+```
+
+Minion static route to SNMP simulation network
+
+```bash
+ssh azureuser@192.0.2.199 "sudo ip r a 10.42.0.0/16 via 192.0.2.134"
+```
+
+Deployment of the OpenNMS stack
+
+```bash
+cd ansible-opennms
+ansible-playbook --user azureuser --become -i ../opennms-lab-inventory.yml opennms-playbook.yml --extra-vars="@../opennms-lab-vars.yml"
+```
+
+**Application URLS**
+* Grafana: http://192.0.2.200:3000
+* OpenNMS Web UI: http://192.0.2.197:8980
+* Jaeger: http://192.0.2.200:16686

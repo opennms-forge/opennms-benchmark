@@ -1,3 +1,0 @@
----
-opennms_version: 33.1.8
-kafka_bootstrap_servers: 192.0.2.68:9092

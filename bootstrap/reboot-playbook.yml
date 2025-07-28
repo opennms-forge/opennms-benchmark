@@ -1,0 +1,6 @@
+---
+- name: Reboot
+  hosts: all
+  become: true
+  roles:
+    - reboot

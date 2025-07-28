@@ -85,3 +85,7 @@
     state: "{{ snmpd_service_state }}"
     enabled: "{{ snmpd_service_enabled }}"
   tags: [ "net-snmp" ]
+
+- name: Add a 10.42/16 network
+  ansible.builtin.shell:
+    cmd: ip route add local 10.42.0.0/16 dev lo

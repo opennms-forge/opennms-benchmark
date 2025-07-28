@@ -1,0 +1,6 @@
+---
+- name: APT upgrade
+  hosts: all
+  become: true
+  roles:
+    - apt-update
