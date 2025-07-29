@@ -1,0 +1,5 @@
+[onms_core]
+core ansible_host="192.0.2.197"
+
+[onms_minion]
+minion ansible_host="192.0.2.199"

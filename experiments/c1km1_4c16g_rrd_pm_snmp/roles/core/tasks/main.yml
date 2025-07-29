@@ -7,11 +7,11 @@
     group: opennms
     mode: 0644
   with_items:
-    - "service-configuration.xml"
-    - "collectd-configuration.xml"
     - "featuresBoot.d/jaeger.boot"
     - "jmx-datacollection-config.d/kafka.xml"
     - "jmx-datacollection-config.d/minion.xml"
     - "opennms.properties.d/jaeger.properties"
+    - "collectd-configuration.xml"
+    - "service-configuration.xml"
   notify:
     - restart core

@@ -1,0 +1,12 @@
+---
+- name: Configure Core
+  hosts: onms_core
+  become: true
+  roles:
+    - core
+
+- name: Configure Minion
+  hosts: onms_minion
+  become: true
+  roles:
+    - minion
