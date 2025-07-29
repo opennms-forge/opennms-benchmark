@@ -29,6 +29,8 @@
     owner: root
     group: root
     mode: "0640"
+  notify:
+    - restart {{ snmpd_service_name }}
   tags: [ "net-snmp" ]
 
 - name: Copy the snmpd.conf template file

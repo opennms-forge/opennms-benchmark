@@ -1,5 +1,3 @@
 ---
 snmpd_service_name: snmpd
 snmpd_pkg_name: snmpd
-
-rsyslog_service_name: rsyslog.service

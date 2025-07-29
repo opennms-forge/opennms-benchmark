@@ -95,12 +95,12 @@ This benchmark lab is intended to give you a tool, that allows you to deploy 6 v
 To simulate a larger set of network agents on the `netsim` Linux host, we can install a local route to a large set of IP addresses.
 
 ```bash
-ip r a local 10.42.0.0/16 dev lo
+ssh azureuser@192.0.2.201 "sudo ip r a local 10.42.0.0/16 dev lo"
 ```
 
 IPv4 forwarding needs to be enabled
 ```bash
-sudo sysctl -w net.ipv4.ip_forward=1
+ssh azureuser@192.0.2.201 "sudo sysctl -w net.ipv4.ip_forward=1"
 ```
 Tha same can be achieved with IPv6 addresses.
 
@@ -118,7 +118,7 @@ sudo sysctl -w net.ipv6.conf.all.forwarding=1
 To access the 10.42.0.0/16 network a static route needs to be installed.
 
 ```bash
-sudo ip r a 10.42.0.0/16 via 192.0.2.134
+ssh azureuser@192.0.2.199 "sudo ip r a 10.42.0.0/16 via 192.0.2.134"
 ```
 ## 🕹️ Usage
 
@@ -135,12 +135,11 @@ cd azcli
 ./benchmark-lab.sh
 ```
 
-Enable IPv4 forwarding
-
 SSH to the public IP for the monitoring host and install tailscale. Enable IPv4 forwarding and advertise the management network. You need to approve the advertised route in the machines "Edit Routes" section.
 
 ```bash
-sysctl -w net.ipv4.ip_forward=1
+ssh azureuser@<public-ip>
+sudo sysctl -w net.ipv4.ip_forward=1
 ```
 
 ```

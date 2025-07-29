@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
 PROJECT_NAME="benchmark"
-ENVIRONMENT="dev"
+ENVIRONMENT="prod"
 LOCATION="eastus"
 RESOURCE_GROUP="rg-${ENVIRONMENT}-${PROJECT_NAME}"
 PROXIMITY_PLACEMENT_GROUP="ppg-${LOCATION}-${ENVIRONMENT}-${PROJECT_NAME}"
-SIZE="Standard_B4ls_v2"
-PRIORITY="Spot" # Regular, Spot"
+SIZE_SMALL="Standard_B4ls_v2"
+SIZE_MEDIUM="Standard_B4s_v2"
+PRIORITY="Regular" # Regular, Spot"
 ALLOW_SSH_CIDR="$(host -4 myip.opendns.com resolver1.opendns.com | grep "has address" | awk '{print $4}')/32"
 
 if [ "${SSH_PUBLIC_KEY}" = "" ]; then
@@ -182,9 +183,8 @@ compute() {
     --nics "nic-${2}-${3}-database-vnet-mgmt" "nic-${2}-${3}-database-vnet-db" \
     --image Canonical:ubuntu-24_04-lts:server:latest \
     --admin-username azureuser \
-    --size "${SIZE}" \
+    --size "${SIZE_SMALL}" \
     --priority "${6}" \
-    --eviction-policy Delete \
     --ppg "${4}" \
     --ssh-key-value "${5}"
 
@@ -195,9 +195,8 @@ compute() {
     --nics "nic-${2}-${3}-core-vnet-mgmt" "nic-${2}-${3}-core-vnet-db" "nic-${2}-${3}-core-vnet-kafka"\
     --image Canonical:ubuntu-24_04-lts:server:latest \
     --admin-username azureuser \
-    --size "${SIZE}" \
+    --size "${SIZE_MEDIUM}" \
     --priority "${6}" \
-    --eviction-policy Delete \
     --ppg "${4}" \
     --ssh-key-value "${5}"
 
@@ -208,9 +207,8 @@ compute() {
     --nics "nic-${2}-${3}-kafka-vnet-mgmt" "nic-${2}-${3}-kafka-vnet-kafka"\
     --image Canonical:ubuntu-24_04-lts:server:latest \
     --admin-username azureuser \
-    --size "${SIZE}" \
+    --size "${SIZE_SMALL}" \
     --priority "${6}" \
-    --eviction-policy Delete \
     --ppg "${4}" \
     --ssh-key-value "${5}"
 
@@ -221,9 +219,8 @@ compute() {
     --nics "nic-${2}-${3}-minion-vnet-mgmt" "nic-${2}-${3}-minion-vnet-kafka" "nic-${2}-${3}-minion-vnet-sim" \
     --image Canonical:ubuntu-24_04-lts:server:latest \
     --admin-username azureuser \
-    --size "${SIZE}" \
+    --size "${SIZE_SMALL}" \
     --priority "${6}" \
-    --eviction-policy Delete \
     --ppg "${4}" \
     --ssh-key-value "${5}"
 
@@ -234,9 +231,8 @@ compute() {
     --nics "nic-${2}-${3}-snmpsim-vnet-mgmt" "nic-${2}-${3}-snmpsim-vnet-sim" \
     --image Canonical:ubuntu-24_04-lts:server:latest \
     --admin-username azureuser \
-    --size "${SIZE}" \
+    --size "${SIZE_SMALL}" \
     --priority "${6}" \
-    --eviction-policy Delete \
     --ppg "${4}" \
     --ssh-key-value "${5}"
 
@@ -247,9 +243,8 @@ compute() {
     --nics "nic-${2}-${3}-mon-vnet-mgmt" \
     --image Canonical:ubuntu-24_04-lts:server:latest \
     --admin-username azureuser \
-    --size "${SIZE}" \
+    --size "${SIZE_SMALL}" \
     --priority "${6}" \
-    --eviction-policy Delete \
     --ppg "${4}" \
     --ssh-key-value "${5}"
 }
@@ -316,7 +311,7 @@ dns() {
 resourceGroupConfig "${RESOURCE_GROUP}" "${LOCATION}" "${PROXIMITY_PLACEMENT_GROUP}"
 networking "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"
 nics "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"
-compute "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}" "${PROXIMITY_PLACEMENT_GROUP}" "${SSH_PUBLIC_KEY}" "${PRIORITY}"
+compute "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}" "${PROXIMITY_PLACEMENT_GROUP}" "${SSH_PUBLIC_KEY}" "${PRIORITY}" # "${EVICTION_POLICY}"
 nsg "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}" "${ALLOW_SSH_CIDR}"
 routing "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"
 dns "${RESOURCE_GROUP}" "${LOCATION}" "${ENVIRONMENT}"

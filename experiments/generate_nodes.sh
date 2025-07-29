@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-FILENAME=65k-nodes.xml
+FILENAME=tmp-nodes.xml
 # Script iterates over 10.42.0.0/16 network
 # Network range: 10.42.0.0 to 10.42.255.255
 # Usable IPs: 10.42.0.1 to 10.42.255.254 (excluding network and broadcast)
 
 # Counter for processed IPs
-counter=0
+counter=9206
 
 printf '<?xml version="1.0" encoding="UTF-8"?>
 <model-import xmlns="http://xmlns.opennms.org/xsd/config/model-import" date-stamp="2016-10-28T10:50:02.025Z" foreign-source="demo-environment" last-import="2016-10-28T10:51:29.354Z">\n' > "${FILENAME}"
 
 # Outer loop for third octet (0-255)
-for third_octet in {0..255}; do
+for third_octet in {36..39}; do
     # Inner loop for fourth octet (1-254 for first/last subnet, 0-255 for middle subnets)
     if [ $third_octet -eq 0 ]; then
         # First subnet: skip .0 (network address)
@@ -21,7 +21,7 @@ for third_octet in {0..255}; do
         start_fourth=0
     fi
 
-    if [ $third_octet -eq 255 ]; then
+    if [ $third_octet -eq 39 ]; then
         # Last subnet: skip .255 (broadcast address)
         end_fourth=254
     else
