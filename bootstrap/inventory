@@ -11,3 +11,10 @@ mon ansible_host="192.0.2.200"
 
 [snmp_sim]
 snmpsim ansible_host="192.0.2.201"
+
+[docker_engine]
+mon ansible_host="192.0.2.200"
+kafka ansible_host="192.0.2.198"
+
+[kafka_ui]
+kafka ansible_host="192.0.2.198"

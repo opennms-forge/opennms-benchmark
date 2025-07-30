@@ -1,0 +1,5 @@
+---
+- name: restart kafka-ui
+  ansible.builtin.service:
+    name: docker-compose@kafka-ui.service
+    state: restarted

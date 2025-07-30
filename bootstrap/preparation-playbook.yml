@@ -12,7 +12,6 @@
   hosts: monitoring
   become: true
   roles:
-    - docker-ce
     - monitoring
 
 - name: SNMP-Simulator
@@ -20,3 +19,15 @@
   become: true
   roles:
     - net-snmp
+
+- name: Docker Engine
+  hosts: docker_engine
+  become: true
+  roles:
+    - docker-ce
+
+- name: Kafka-UI
+  hosts: kafka_ui
+  become: true
+  roles:
+    - kafka-ui

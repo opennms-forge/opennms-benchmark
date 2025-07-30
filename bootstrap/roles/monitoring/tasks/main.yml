@@ -78,33 +78,13 @@
     enabled: true
   tags: [ "monitoring", "jaeger" ]
 
-- name: Create Kafka UI directory
-  ansible.builtin.file:
-    path: /etc/docker/kafka-ui
-    state: directory
-  tags: [ "monitoring", "kafka-ui" ]
-
-- name: Create Kafka UI compose
-  ansible.builtin.copy:
-    src: kafka-ui/compose.yml
-    dest: /etc/docker/kafka-ui/compose.yml
-  notify:
-    - restart kafka-ui
-  tags: [ "monitoring", "kafka-ui" ]
-
-- name: Enable Kafka UI as a service
-  ansible.builtin.service:
-    name: docker-compose@kafka-ui.service
-    state: started
-    enabled: true
-  tags: [ "monitoring", "kafka-ui" ]
-
 - name: Enable IPv4 forwarding temporarily
   ansible.builtin.sysctl:
     name: net.ipv4.ip_forward
     value: 1
     state: present
     reload: yes
+  tags: [ "ipv4-forwarding" ]
 
 - name: Enable IPv6 forwarding temporarily
   ansible.builtin.sysctl:
@@ -112,6 +92,7 @@
     value: 1
     state: present
     reload: yes
+  tags: [ "ipv6-forwarding" ]
 
 - name: Persistent IPv4 forwarding
   ansible.posix.sysctl:
@@ -120,6 +101,7 @@
     state: present
     reload: yes
     sysctl_file: /etc/sysctl.d/99-ipv4-forward.conf
+  tags: [ "ipv4-forwarding" ]
 
 - name: Persistent IPv6 forwarding
   ansible.posix.sysctl:
@@ -128,3 +110,4 @@
     state: present
     reload: yes
     sysctl_file: /etc/sysctl.d/99-ipv6-forward.conf
+  tags: [ "ipv6-forwarding" ]

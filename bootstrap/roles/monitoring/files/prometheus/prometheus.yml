@@ -36,3 +36,7 @@ scrape_configs:
                    'minion:9100',
                    'mon:9100',
                    'snmpsim:9100']
+
+  - job_name: 'jmx_core'
+    static_configs:
+      - targets: [ 'core:9299' ]

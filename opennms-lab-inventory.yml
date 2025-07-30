@@ -10,7 +10,7 @@ all:
           hosts:
             core-vm:
               ansible_host: 192.0.2.197
-        message-broker:
+        message_broker:
           hosts:
             kafka-vm:
               ansible_host: 192.0.2.198

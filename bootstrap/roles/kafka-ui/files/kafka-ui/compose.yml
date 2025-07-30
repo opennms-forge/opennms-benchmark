@@ -10,6 +10,6 @@ services:
     environment:
       TZ: UTC
       KAFKA_CLUSTERS_0_NAME: opennms-benchmark
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 192.0.2.198:9092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 192.0.2.68:9092
     ports:
       - "8080:8080/tcp"
