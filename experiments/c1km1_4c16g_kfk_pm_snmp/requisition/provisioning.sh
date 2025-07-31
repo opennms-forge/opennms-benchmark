@@ -29,7 +29,7 @@ curl -s -u ${OPENNMS_USER}:${OPENNMS_PASS} \
      http://${OPENNMS_HOST}:${OPENNMS_PORT}/opennms/rest/requisitions
 echo "DONE"
 
-echo -n "Import requisition for batch ${BATCH}              ... "
+echo -n "Import requisition for batch ${BATCH}                    ... "
 curl -s -u ${OPENNMS_USER}:${OPENNMS_PASS} \
      -X PUT \
      "http://${OPENNMS_HOST}:${OPENNMS_PORT}/opennms/rest/requisitions/1022-nodes-batch-${BATCH}/import"
