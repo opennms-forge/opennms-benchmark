@@ -1,0 +1,12 @@
+---
+- name: Configure Core
+  hosts: core
+  become: true
+  roles:
+    - core
+
+- name: Configure Minion
+  hosts: minion
+  become: true
+  roles:
+    - minion
