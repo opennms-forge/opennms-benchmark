@@ -56,9 +56,13 @@ kafka_server_properties:
   "log.dirs": /var/log/kafka/combined-logs
 
 opennms_properties_timeseries:
-  org.opennms.timeseries.strategy: osgi
+  org.opennms.rrd.strategyClass: org.opennms.netmgt.rrd.rrdtool.MultithreadedJniRrdStrategy
+  org.opennms.rrd.interfaceJar: /usr/share/java/jrrd2.jar
+  opennms.library.jrrd2: /usr/lib/jni/libjrrd2.so
+  org.opennms.web.graphs.engine: rrdtool
+  rrd.binary: /usr/bin/rrdtool
 
 opennms_jvm_conf:
   JAVA_HEAP_SIZE: 8192
   JAVA_INITIAL_HEAP_SIZE: 8192
-  ADDITIONAL_MANAGER_OPTIONS: "-XX:+UseG1GC -javaagent:/opt/prom-jmx-exporter/jmx_prometheus_javaagent.jar=9299:/opt/prom-jmx-exporter/config.yaml"
+  ADDITIONAL_MANAGER_OPTIONS: "-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -javaagent:/opt/prom-jmx-exporter/jmx_prometheus_javaagent.jar=9299:/opt/prom-jmx-exporter/config.yaml"

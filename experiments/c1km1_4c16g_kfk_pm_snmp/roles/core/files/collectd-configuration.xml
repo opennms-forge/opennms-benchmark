@@ -3,7 +3,7 @@
         <filter>IPADDR != '0.0.0.0'</filter>
         <include-range begin="1.1.1.1" end="254.254.254.254" />
         <include-range begin="::1" end="ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff" />
-        <service name="OpenNMS-JVM" interval="15000" user-defined="false" status="on">
+        <service name="OpenNMS-JVM" interval="300000" user-defined="false" status="on">
             <parameter key="port" value="${requisition:port|detector:port|18980}" />
             <parameter key="retry" value="${requisition:collector-retry|requisition:retry|detector:retry|2}" />
             <parameter key="timeout" value="${requisition:collector-timeout|requisition:timeout|detector:timeout|3000}" />
@@ -13,7 +13,7 @@
             <parameter key="ds-name" value="opennms-jvm" />
             <parameter key="friendly-name" value="${requisition:friendly-name|detector:friendly-name|opennms-jvm}" />
         </service>
-        <service name="JMX-Minion" interval="15000" user-defined="false" status="on">
+        <service name="JMX-Minion" interval="300000" user-defined="false" status="on">
             <parameter key="port" value="${requisition:port|detector:port|18980}" />
             <parameter key="retry" value="${requisition:collector-retry|requisition:retry|detector:retry|2}" />
             <parameter key="timeout" value="${requisition:collector-timeout|requisition:timeout|detector:timeout|3000}" />
@@ -24,7 +24,7 @@
             <parameter key="friendly-name" value="${requisition:friendly-name|detector:friendly-name|jmx-minion}" />
             <parameter key="use-foreign-id-as-system-id" value="${requisition:use-foreign-id-as-system-id|detector:use-foreign-id-as-system-id|true}" />
         </service>
-        <service name="JMX-Kafka" interval="15000" user-defined="false" status="on">
+        <service name="JMX-Kafka" interval="300000" user-defined="false" status="on">
             <parameter key="port" value="${requisition:kafka-port|9999}" />
             <parameter key="retry" value="${requisition:collector-retry|requisition:retry|detector:retry|2}" />
             <parameter key="timeout" value="${requisition:collector-timeout|requisition:timeout|detector:timeout|3000}" />
@@ -34,13 +34,13 @@
             <parameter key="ds-name" value="jmx-kafka" />
             <parameter key="friendly-name" value="${requisition:friendly-name|detector:friendly-name|jmx-kafka}" />
         </service>
-        <service name="OpenNMS-DB" interval="15000" user-defined="false" status="on">
+        <service name="OpenNMS-DB" interval="300000" user-defined="false" status="on">
             <parameter key="collection" value="${requisition:collection|detector:collection|default}" />
             <parameter key="thresholding-enabled" value="true" />
             <parameter key="driver" value="${requisition:driver|detector:driver|org.postgresql.Driver}" />
             <parameter key="data-source" value="${requisition:data-source|detector:data-source|opennms}" />
         </service>
-        <service name="OpenNMS-DB-Stats" interval="15000" user-defined="false" status="on">
+        <service name="OpenNMS-DB-Stats" interval="300000" user-defined="false" status="on">
             <parameter key="collection" value="${requisition:collection|detector:collection|PostgreSQL}" />
             <parameter key="thresholding-enabled" value="true" />
             <parameter key="driver" value="${requisition:driver|detector:driver|org.postgresql.Driver}" />

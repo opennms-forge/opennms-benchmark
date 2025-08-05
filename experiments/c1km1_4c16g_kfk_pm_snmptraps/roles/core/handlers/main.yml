@@ -1,0 +1,5 @@
+---
+- name: restart core
+  ansible.builtin.service:
+    name: opennms
+    state: restarted

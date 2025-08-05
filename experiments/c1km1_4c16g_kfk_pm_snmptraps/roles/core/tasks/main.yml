@@ -1,0 +1,17 @@
+---
+- name: Configure OpenNMS Core Services
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/opennms/{{ item }}"
+    owner: opennms
+    group: opennms
+    mode: 0644
+  with_items:
+    - "featuresBoot.d/jaeger.boot"
+    - "featuresBoot.d/kafka-producer.boot"
+    - "opennms.properties.d/jaeger.properties"
+    - "org.opennms.features.kafka.producer.cfg"
+    - "org.opennms.features.kafka.producer.client.cfg"
+    - "service-configuration.xml"
+  notify:
+    - restart core

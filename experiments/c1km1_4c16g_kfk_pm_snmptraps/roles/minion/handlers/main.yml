@@ -1,0 +1,5 @@
+---
+- name: restart minion
+  ansible.builtin.service:
+    name: minion
+    state: restarted
