@@ -10,3 +10,9 @@
   become: true
   roles:
     - minion
+
+- name: Customize Postgres
+  hosts: database
+  become: true
+  roles:
+    - postgresql
