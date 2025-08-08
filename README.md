@@ -19,6 +19,63 @@ There is a [Wiki](https://github.com/opennms-forge/opennms-benchmark/wiki) with 
 
 * This repository is not intended to deploy or build production environments
 
+## 📐 Lab Design
+
+![](assets/ck1m.png)
+
+## ⚙️ Compute and Storage
+
+This benchmark lab deploys 6 virtual machines and wires them in specific way together.
+
+> [!NOTE]
+> You need Virtual Machine specifications that can handle at least 3 network interfaces
+
+| Virtual Machine    | Description                  |
+|:-------------------|:-----------------------------|
+| OpenNMS Core       | OpenNMS Horizon              |
+| PostgreSQL         | PostgreSQL                   |
+| Apache Kafka       | Kafka with Kafka UI          |
+| OpenNMS Minion     | OpenNMS Horizon              |
+| Net-SNMP Simulator | Net-SNMP Agent               |
+| Monitoring         | Prometheus, Jaeger, Grafana  |
+
+## ⛓️ Networking
+
+With the given network layout we give you good visibility which traffic goes to which service by isolating them.
+The network IP space is chosen from the private 192.0.2/24 range which is not public and should reduce IP address conflicts with existing 192.168/16 private networks.
+
+The public address from Azure is assigned to the management network interface of the monitoring VM.
+
+### Network address plan for Testing
+
+| Host       | Interface | IP Address       | Default gateway | Description               |
+|:-----------|:----------|:-----------------|:----------------|:--------------------------|
+| database   | ens0      | `192.0.2.4/26`   | 192.0.2.1       | PostgreSQL database       |
+| core       | ens2      | `192.0.2.5/26`   | 192.0.2.1       | Core to PostgreSQL        |
+| kafka      | ens0      | `192.0.2.68/26`  | 192.0.2.65      | Kafka Broker              | 
+| core       | ens0      | `192.0.2.69/26`  | 192.0.2.65      | Core to Kafka             |
+| minion     | ens2      | `192.0.2.70/26`  | 192.0.2.65      | Minion to Kafka           |
+| minion     | ens0      | `192.0.2.133/26` | 192.0.2.129     | Minion to SNMP simulator  |
+| netsim     | ens0      | `192.0.2.134/26` | 192.0.2.129     | SNMP Simulator            |
+
+### Network address plan for out of band management
+
+| Host       | Interface | IP Address       | Default gateway | Description               |
+|:-----------|:----------|:-----------------|:----------------|:--------------------------|
+| database   | ens1      | `192.0.2.196/26` | 192.0.2.193     | PostgreSQL Managament     |
+| core       | ens1      | `192.0.2.197/26` | 192.0.2.193     | OpenNMS Core Managament   |
+| kafka      | ens1      | `192.0.2.198/26` | 192.0.2.193     | Kafka Broker Managament   |
+| minion     | ens1      | `192.0.2.199/26` | 192.0.2.193     | OpenNMS Minion Managament |
+| monitoring | ens1      | `192.0.2.200/26` | 192.0.2.193     | Monitoring Managament     |
+| netsim     | ens1      | `192.0.2.201/26` | 192.0.2.193     | SNMP Simulator            |
+
+
+### Network for simulation 
+
+| Network      | Gateway Address | Default gateway | Description              |
+|:-------------|:----------------|:----------------|:-------------------------|
+| 10.42.0.0/16 | `192.0.2.201`   | `192.0.2.129`   | Network with SNMP Agents |
+
 ## 🕹️ Usage
 
 ### Clone the repository with submodules
