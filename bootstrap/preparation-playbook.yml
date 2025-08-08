@@ -8,6 +8,12 @@
     - common
     - prometheus.prometheus.node_exporter
 
+- name: Docker Engine
+  hosts: docker_engine
+  become: true
+  roles:
+    - docker-ce
+
 - name: Monitoring services
   hosts: monitoring
   become: true
@@ -19,12 +25,6 @@
   become: true
   roles:
     - net-snmp
-
-- name: Docker Engine
-  hosts: docker_engine
-  become: true
-  roles:
-    - docker-ce
 
 - name: Kafka-UI
   hosts: kafka_ui

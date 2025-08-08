@@ -6,9 +6,6 @@ minion ansible_host="192.0.2.199"
 mon ansible_host="192.0.2.200"
 snmpsim ansible_host="192.0.2.201"
 
-[monitoring]
-mon ansible_host="192.0.2.200"
-
 [snmp_sim]
 snmpsim ansible_host="192.0.2.201"
 
@@ -18,3 +15,6 @@ kafka ansible_host="192.0.2.198"
 
 [kafka_ui]
 kafka ansible_host="192.0.2.198"
+
+[monitoring]
+mon ansible_host="192.0.2.200"
