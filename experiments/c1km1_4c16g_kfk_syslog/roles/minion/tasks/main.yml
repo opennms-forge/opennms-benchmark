@@ -9,5 +9,6 @@
   with_items:
     - "custom.system.properties"
     - "featuresBoot.d/jaeger.boot"
+    - "org.opennms.netmgt.syslog.cfg"
   notify:
     - restart minion

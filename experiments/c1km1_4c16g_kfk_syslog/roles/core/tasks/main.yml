@@ -12,6 +12,7 @@
     - "opennms.properties.d/jaeger.properties"
     - "org.opennms.features.kafka.producer.cfg"
     - "org.opennms.features.kafka.producer.client.cfg"
+    - "syslogd-configuration.xml"
     - "service-configuration.xml"
   notify:
     - restart core
