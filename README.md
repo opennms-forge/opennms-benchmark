@@ -113,6 +113,21 @@ ansible-playbook --user azureuser --become -i ../ansible-inventory.yml opennms-p
 > [!IMPORTANT]
 > The Prometheus JMX exporter requires right now to restart Core manually, see [issue#57](https://github.com/opennms-forge/ansible-opennms/issues/57).
 
+### Setup SNMP Simulation
+
+Add a local any IP route on the SNMP simulation VM to respond to any address in the 10.42/16 network
+```bash
+ssh azureuser@192.0.2.201 "sudo ip route add local 10.42.0.0/16 dev lo"
+```
+
+Add a route on the Minion to reach any address in 10.42.0.0 via the SNMP simulation VM
+```bash
+ssh azureuser@192.0.2.199 "sudo ip r a 10.42.0.0/16 via 192.0.2.134"
+```
+
+> [!IMPORTANT]
+> The routing entries are not static, you have to set them again when your reboot the virtual machines
+ 
 ### Applications
 
 You have now access to the following applications and you can prepare and run experiments.
