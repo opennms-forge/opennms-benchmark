@@ -4,17 +4,21 @@ all:
       children:
         database:
           hosts:
-            db-vm:
+            db_vm:
               ansible_host: 192.0.2.196
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
         core:
           hosts:
-            core-vm:
+            core_vm:
               ansible_host: 192.0.2.197
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
         message_broker:
           hosts:
-            kafka-vm:
+            kafka_vm:
               ansible_host: 192.0.2.198
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
         minion:
           hosts:
-            minion-vm:
+            minion_vm:
               ansible_host: 192.0.2.199
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no'

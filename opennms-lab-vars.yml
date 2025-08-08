@@ -61,5 +61,5 @@ opennms_properties_timeseries:
 opennms_jvm_conf:
   JAVA_HEAP_SIZE: 8192
   JAVA_INITIAL_HEAP_SIZE: 8192
-  ADDITIONAL_MANAGER_OPTIONS: "-XX:+UseG1GC -javaagent:/opt/prom-jmx-exporter/jmx_prometheus_javaagent.jar=9299:/opt/prom-jmx-exporter/config.yaml"
+  ADDITIONAL_MANAGER_OPTIONS: '"-XX:+UseG1GC -javaagent:/opt/prom-jmx-exporter/jmx_prometheus_javaagent.jar=9299:/opt/prom-jmx-exporter/config.yaml"'
 
