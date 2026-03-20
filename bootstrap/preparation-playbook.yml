@@ -25,6 +25,7 @@
   become: true
   roles:
     - net-snmp
+    - l8opensim
 
 - name: Kafka-UI
   hosts: kafka_ui
