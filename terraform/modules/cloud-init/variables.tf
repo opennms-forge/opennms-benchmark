@@ -36,3 +36,9 @@ variable "hosts" {
   type        = map(string)
   description = "Hostname to IP map for /etc/hosts injection"
 }
+
+variable "extra_packages" {
+  type        = list(string)
+  default     = []
+  description = "Additional packages to install via cloud-init. Use for provider-specific agents (e.g. qemu-guest-agent for KVM)."
+}

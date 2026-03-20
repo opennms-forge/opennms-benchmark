@@ -9,5 +9,6 @@ locals {
     admin_user     = var.admin_user
     ssh_public_key = var.ssh_public_key
     hosts          = var.hosts
+    extra_packages = var.extra_packages
   })
 }

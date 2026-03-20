@@ -8,7 +8,7 @@ terraform {
   }
 }
 
-# q35 does not support IDE controllers; change cloud-init cdrom bus to sata
+# q35 does not support IDE controllers; change cloud-init cdrom bus to sata.
 locals {
   cdrom_sata_xslt = <<-XSLT
     <?xml version="1.0"?>
@@ -94,6 +94,7 @@ module "cloud_init_database" {
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
+  extra_packages = var.extra_packages
   interfaces = [
     { name = "enp1s0", address = var.ip_database, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_database_db, prefix = 26, gateway = null },
@@ -107,6 +108,7 @@ module "cloud_init_core" {
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
+  extra_packages = var.extra_packages
   interfaces = [
     { name = "enp1s0", address = var.ip_core, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_core_db, prefix = 26, gateway = null },
@@ -121,6 +123,7 @@ module "cloud_init_kafka" {
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
+  extra_packages = var.extra_packages
   interfaces = [
     { name = "enp1s0", address = var.ip_kafka, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_kafka_kafka, prefix = 26, gateway = null },
@@ -134,6 +137,7 @@ module "cloud_init_minion" {
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
+  extra_packages = var.extra_packages
   interfaces = [
     { name = "enp1s0", address = var.ip_minion, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_minion_kafka, prefix = 26, gateway = null },
@@ -151,6 +155,7 @@ module "cloud_init_snmpsim" {
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
+  extra_packages = var.extra_packages
   interfaces = [
     { name = "enp1s0", address = var.ip_snmpsim, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_snmpsim, prefix = 26, gateway = null },
@@ -164,6 +169,7 @@ module "cloud_init_monitoring" {
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
+  extra_packages = var.extra_packages
   interfaces = [
     { name = "enp1s0", address = var.ip_monitoring, prefix = 26, gateway = null },
     { name = "enp2s0", address = null, prefix = null, gateway = null },
