@@ -25,7 +25,7 @@ module "compute" {
   storage_pool       = var.storage_pool
   ubuntu_cloud_image = var.ubuntu_cloud_image
   admin_user         = var.admin_user
-  ssh_public_key     = var.ssh_public_key
+  ssh_public_key     = trimspace(file(pathexpand("${var.ssh_key_path}.pub")))
   snmp_sim_cidr      = var.snmp_sim_cidr
   snmp_sim_gateway   = var.snmp_sim_gateway
   hosts              = local.hosts
