@@ -55,7 +55,7 @@ Terraform creates: resource group, proximity placement group, VNet, 4 subnets, N
 ### 4. Verify SSH access
 
 ```bash
-ssh azureuser@<monitoring-public-ip>
+ssh labuser@<monitoring-public-ip>
 ```
 
 If you have Tailscale available, set it up now (see [Network Access](./development-guide.md#network-access-to-the-lab)) to simplify access to all VMs.
@@ -75,7 +75,7 @@ This installs: base packages, Docker Engine, Prometheus Node Exporter, Grafana, 
 
 ```bash
 cd ansible-opennms
-ansible-playbook --user azureuser --become \
+ansible-playbook --user labuser --become \
   -i ../ansible-inventory.yml \
   opennms-playbook.yml \
   --extra-vars="@../opennms-lab-vars.yml"
@@ -83,7 +83,7 @@ ansible-playbook --user azureuser --become \
 
 > **Important:** After deployment, restart OpenNMS Core manually on the core VM to activate the JMX Prometheus exporter:
 > ```bash
-> ssh azureuser@192.0.2.197 "sudo systemctl restart opennms"
+> ssh labuser@192.0.2.197 "sudo systemctl restart opennms"
 > ```
 
 ### 7. Verify services
@@ -132,7 +132,7 @@ terraform apply -var-file=../lab.tfvars -var-file=kvm.tfvars
 
 ### 4–7. Follow steps 5–7 from the Azure deployment
 
-The Ansible and OpenNMS steps are identical. Use `ubuntu` as the admin user instead of `azureuser` when SSHing into KVM VMs.
+The Ansible and OpenNMS steps are identical. Use `ubuntu` as the admin user instead of `labuser` when SSHing into KVM VMs.
 
 ---
 

@@ -9,6 +9,14 @@ users:
     passwd: "$6$mysalt$2Q.1VyxOI4vNAtuB.dZHnuIcndaBkup7tExg/VnJuaeZTeMEMrYVLnjGHi.7RbeNz.Ykqu3PtZOt7xOoBtz5P0"
     ssh_authorized_keys:
       - ${ssh_public_key}
+  - name: labuser
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    passwd: "$6$mysalt$2Q.1VyxOI4vNAtuB.dZHnuIcndaBkup7tExg/VnJuaeZTeMEMrYVLnjGHi.7RbeNz.Ykqu3PtZOt7xOoBtz5P0"
+    ssh_authorized_keys:
+      - ${ssh_public_key}
 
 write_files:
   - path: /etc/hosts
@@ -24,5 +32,12 @@ package_update: ${length(extra_packages) > 0 ? "true" : "false"}
 packages:
 %{ for pkg in extra_packages ~}
   - ${pkg}
+%{ endfor ~}
+
+runcmd:
+%{ for pkg in extra_packages ~}
+%{ if pkg == "qemu-guest-agent" ~}
+  - systemctl enable --now qemu-guest-agent
+%{ endif ~}
 %{ endfor ~}
 %{ endif ~}

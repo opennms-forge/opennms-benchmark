@@ -58,7 +58,7 @@ cd ../../bootstrap && ansible-playbook -i inventory site.yml
 
 # 4. Deploy OpenNMS stack
 cd ../ansible-opennms
-ansible-playbook --user azureuser --become \
+ansible-playbook --user labuser --become \
   -i ../ansible-inventory.yml opennms-playbook.yml \
   --extra-vars="@../opennms-lab-vars.yml"
 
