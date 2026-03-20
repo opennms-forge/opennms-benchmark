@@ -36,6 +36,22 @@ terraform init
 terraform apply -var-file=../lab.tfvars -var-file=kvm.tfvars
 ```
 
+## Getting VM IP Addresses
+
+After `terraform apply`, VMs on the `lab-mgmt` network have static IPs defined in `lab.tfvars`. VMs on the `lab-external` bridge network receive a DHCP address from your router — these are only known after the VM boots.
+
+Once `qemu-guest-agent` is running inside the VMs, query all assigned IPs with:
+
+```bash
+LIBVIRT_URI="qemu+ssh://user@your-kvm-host/system"
+for vm in database core kafka minion snmpsim mon; do
+  echo -n "$vm: "
+  virsh -c $LIBVIRT_URI domifaddr $vm --source agent 2>/dev/null || echo "no lease yet"
+done
+```
+
+Use `--source agent` (via qemu-guest-agent) to see all interfaces including the external DHCP one. If the agent isn't ready yet, retry after a minute — cloud-init installs it on first boot.
+
 ## Deploying to a Remote KVM Host
 
 By default, `kvm.tfvars` connects to the local KVM daemon:
