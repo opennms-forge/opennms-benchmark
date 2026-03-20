@@ -16,6 +16,7 @@ module "network" {
   subnet_kafka = var.subnet_kafka
   subnet_sim   = var.subnet_sim
   subnet_mgmt  = var.subnet_mgmt
+  bridge_name  = var.bridge_name
 }
 
 module "compute" {
@@ -43,7 +44,8 @@ module "compute" {
   network_db_id      = module.network.network_db_id
   network_kafka_id   = module.network.network_kafka_id
   network_sim_id     = module.network.network_sim_id
-  network_mgmt_id    = module.network.network_mgmt_id
+  network_mgmt_id     = module.network.network_mgmt_id
+  network_external_id = module.network.network_external_id
 }
 
 module "inventory" {

@@ -16,11 +16,11 @@ variable "ssh_public_key" {
 variable "interfaces" {
   type = list(object({
     name    = string
-    address = string
-    prefix  = number
+    address = optional(string)
+    prefix  = optional(number)
     gateway = optional(string)
   }))
-  description = "Network interfaces to configure via cloud-init network-config v2"
+  description = "Network interfaces to configure via cloud-init network-config v2. Set address=null for DHCP."
 }
 
 variable "extra_routes" {

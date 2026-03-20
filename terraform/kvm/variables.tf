@@ -19,6 +19,9 @@ variable "ip_minion_sim" { type = string }
 variable "snmp_sim_cidr" { type = string }
 variable "snmp_sim_gateway" { type = string }
 variable "admin_user" { type = string }
+variable "vm_names" {
+  type = map(string)
+}
 
 # KVM-specific (from kvm.tfvars)
 variable "libvirt_uri" { type = string }
@@ -29,3 +32,4 @@ variable "ssh_public_key" {
   sensitive = true
 }
 variable "ssh_key_path" { type = string }
+variable "bridge_name" { type = string }

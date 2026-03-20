@@ -2,6 +2,7 @@ version: 2
 ethernets:
 %{ for iface in interfaces ~}
   ${iface.name}:
+%{ if iface.address != null ~}
     addresses:
       - ${iface.address}/${iface.prefix}
 %{ if iface.gateway != null ~}
@@ -17,4 +18,7 @@ ethernets:
 %{ endfor ~}
 %{ endif ~}
     dhcp4: false
+%{ else ~}
+    dhcp4: true
+%{ endif ~}
 %{ endfor ~}

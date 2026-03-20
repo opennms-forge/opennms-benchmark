@@ -8,6 +8,22 @@ terraform {
   }
 }
 
+# q35 does not support IDE controllers; change cloud-init cdrom bus to sata
+locals {
+  cdrom_sata_xslt = <<-XSLT
+    <?xml version="1.0"?>
+    <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+      <xsl:output omit-xml-declaration="yes" indent="yes"/>
+      <xsl:template match="node()|@*">
+        <xsl:copy><xsl:apply-templates select="node()|@*"/></xsl:copy>
+      </xsl:template>
+      <xsl:template match="disk[@device='cdrom']/target/@bus">
+        <xsl:attribute name="bus">sata</xsl:attribute>
+      </xsl:template>
+    </xsl:stylesheet>
+  XSLT
+}
+
 # Ubuntu 24.04 LTS cloud image — must be the cloud image (qcow2), NOT the server installer ISO.
 # Download before running terraform apply:
 #   wget -O /var/lib/libvirt/images/noble-server-cloudimg-amd64.img \
@@ -19,12 +35,7 @@ resource "libvirt_volume" "ubuntu_base" {
   source = var.ubuntu_cloud_image
   format = "qcow2"
 
-  lifecycle {
-    precondition {
-      condition     = fileexists(var.ubuntu_cloud_image)
-      error_message = "Ubuntu 24.04 cloud image not found at '${var.ubuntu_cloud_image}'. Download noble-server-cloudimg-amd64.img from https://cloud-images.ubuntu.com/noble/current/ first."
-    }
-  }
+
 }
 
 # Per-VM volumes (thin-provisioned clones of base image)
@@ -78,8 +89,8 @@ module "cloud_init_database" {
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
   interfaces = [
-    { name = "eth0", address = var.ip_database, prefix = 26, gateway = null },
-    { name = "eth1", address = var.ip_database_db, prefix = 26, gateway = null },
+    { name = "enp1s0", address = var.ip_database, prefix = 26, gateway = null },
+    { name = "enp2s0", address = var.ip_database_db, prefix = 26, gateway = null },
   ]
 }
 
@@ -90,9 +101,9 @@ module "cloud_init_core" {
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
   interfaces = [
-    { name = "eth0", address = var.ip_core, prefix = 26, gateway = null },
-    { name = "eth1", address = var.ip_core_db, prefix = 26, gateway = null },
-    { name = "eth2", address = var.ip_core_kafka, prefix = 26, gateway = null },
+    { name = "enp1s0", address = var.ip_core, prefix = 26, gateway = null },
+    { name = "enp2s0", address = var.ip_core_db, prefix = 26, gateway = null },
+    { name = "enp3s0", address = var.ip_core_kafka, prefix = 26, gateway = null },
   ]
 }
 
@@ -103,8 +114,8 @@ module "cloud_init_kafka" {
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
   interfaces = [
-    { name = "eth0", address = var.ip_kafka, prefix = 26, gateway = null },
-    { name = "eth1", address = var.ip_kafka_kafka, prefix = 26, gateway = null },
+    { name = "enp1s0", address = var.ip_kafka, prefix = 26, gateway = null },
+    { name = "enp2s0", address = var.ip_kafka_kafka, prefix = 26, gateway = null },
   ]
 }
 
@@ -115,9 +126,9 @@ module "cloud_init_minion" {
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
   interfaces = [
-    { name = "eth0", address = var.ip_minion, prefix = 26, gateway = null },
-    { name = "eth1", address = var.ip_minion_kafka, prefix = 26, gateway = null },
-    { name = "eth2", address = var.ip_minion_sim, prefix = 26, gateway = null },
+    { name = "enp1s0", address = var.ip_minion, prefix = 26, gateway = null },
+    { name = "enp2s0", address = var.ip_minion_kafka, prefix = 26, gateway = null },
+    { name = "enp3s0", address = var.ip_minion_sim, prefix = 26, gateway = null },
   ]
   extra_routes = [
     { to = var.snmp_sim_cidr, via = var.snmp_sim_gateway }
@@ -131,8 +142,8 @@ module "cloud_init_snmpsim" {
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
   interfaces = [
-    { name = "eth0", address = var.ip_snmpsim, prefix = 26, gateway = null },
-    { name = "eth1", address = var.ip_snmpsim, prefix = 26, gateway = null },
+    { name = "enp1s0", address = var.ip_snmpsim, prefix = 26, gateway = null },
+    { name = "enp2s0", address = var.ip_snmpsim, prefix = 26, gateway = null },
   ]
 }
 
@@ -143,7 +154,8 @@ module "cloud_init_monitoring" {
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
   interfaces = [
-    { name = "eth0", address = var.ip_monitoring, prefix = 26, gateway = null },
+    { name = "enp1s0", address = var.ip_monitoring, prefix = 26, gateway = null },
+    { name = "enp2s0", address = null, prefix = null, gateway = null },
   ]
 }
 
@@ -192,6 +204,7 @@ resource "libvirt_cloudinit_disk" "monitoring" {
 # VMs (libvirt domains)
 resource "libvirt_domain" "database" {
   name      = "database"
+  machine   = "q35"
   memory    = 4096
   vcpu      = 2
   cloudinit = libvirt_cloudinit_disk.database.id
@@ -200,10 +213,24 @@ resource "libvirt_domain" "database" {
 
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_db_id }
+
+  console {
+    type        = "pty"
+    target_port = "0"
+    target_type = "serial"
+  }
+
+  graphics {
+    type        = "vnc"
+    listen_type = "address"
+    autoport    = true
+  }
+  xml { xslt = local.cdrom_sata_xslt }
 }
 
 resource "libvirt_domain" "core" {
   name      = "core"
+  machine   = "q35"
   memory    = 16384
   vcpu      = 4
   cloudinit = libvirt_cloudinit_disk.core.id
@@ -213,10 +240,24 @@ resource "libvirt_domain" "core" {
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_db_id }
   network_interface { network_id = var.network_kafka_id }
+
+  console {
+    type        = "pty"
+    target_port = "0"
+    target_type = "serial"
+  }
+
+  graphics {
+    type        = "vnc"
+    listen_type = "address"
+    autoport    = true
+  }
+  xml { xslt = local.cdrom_sata_xslt }
 }
 
 resource "libvirt_domain" "kafka" {
   name      = "kafka"
+  machine   = "q35"
   memory    = 4096
   vcpu      = 2
   cloudinit = libvirt_cloudinit_disk.kafka.id
@@ -225,10 +266,24 @@ resource "libvirt_domain" "kafka" {
 
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_kafka_id }
+
+  console {
+    type        = "pty"
+    target_port = "0"
+    target_type = "serial"
+  }
+
+  graphics {
+    type        = "vnc"
+    listen_type = "address"
+    autoport    = true
+  }
+  xml { xslt = local.cdrom_sata_xslt }
 }
 
 resource "libvirt_domain" "minion" {
   name      = "minion"
+  machine   = "q35"
   memory    = 4096
   vcpu      = 2
   cloudinit = libvirt_cloudinit_disk.minion.id
@@ -238,10 +293,24 @@ resource "libvirt_domain" "minion" {
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_kafka_id }
   network_interface { network_id = var.network_sim_id }
+
+  console {
+    type        = "pty"
+    target_port = "0"
+    target_type = "serial"
+  }
+
+  graphics {
+    type        = "vnc"
+    listen_type = "address"
+    autoport    = true
+  }
+  xml { xslt = local.cdrom_sata_xslt }
 }
 
 resource "libvirt_domain" "snmpsim" {
   name      = "snmpsim"
+  machine   = "q35"
   memory    = 4096
   vcpu      = 2
   cloudinit = libvirt_cloudinit_disk.snmpsim.id
@@ -250,10 +319,24 @@ resource "libvirt_domain" "snmpsim" {
 
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_sim_id }
+
+  console {
+    type        = "pty"
+    target_port = "0"
+    target_type = "serial"
+  }
+
+  graphics {
+    type        = "vnc"
+    listen_type = "address"
+    autoport    = true
+  }
+  xml { xslt = local.cdrom_sata_xslt }
 }
 
 resource "libvirt_domain" "monitoring" {
   name      = "mon"
+  machine   = "q35"
   memory    = 4096
   vcpu      = 2
   cloudinit = libvirt_cloudinit_disk.monitoring.id
@@ -261,4 +344,18 @@ resource "libvirt_domain" "monitoring" {
   disk { volume_id = libvirt_volume.monitoring.id }
 
   network_interface { network_id = var.network_mgmt_id }
+  network_interface { network_id = var.network_external_id }
+
+  console {
+    type        = "pty"
+    target_port = "0"
+    target_type = "serial"
+  }
+
+  graphics {
+    type        = "vnc"
+    listen_type = "address"
+    autoport    = true
+  }
+  xml { xslt = local.cdrom_sata_xslt }
 }

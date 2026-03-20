@@ -5,6 +5,8 @@ users:
     groups: sudo
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    passwd: "$6$mysalt$2Q.1VyxOI4vNAtuB.dZHnuIcndaBkup7tExg/VnJuaeZTeMEMrYVLnjGHi.7RbeNz.Ykqu3PtZOt7xOoBtz5P0"
     ssh_authorized_keys:
       - ${ssh_public_key}
 

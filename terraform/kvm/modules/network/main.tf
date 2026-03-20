@@ -38,3 +38,10 @@ resource "libvirt_network" "mgmt" {
   addresses = [var.subnet_mgmt]
   autostart = true
 }
+
+resource "libvirt_network" "external" {
+  name      = "lab-external"
+  mode      = "bridge"
+  bridge    = var.bridge_name
+  autostart = true
+}

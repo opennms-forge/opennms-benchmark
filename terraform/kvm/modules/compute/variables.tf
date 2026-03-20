@@ -24,3 +24,4 @@ variable "network_db_id" { type = string }
 variable "network_kafka_id" { type = string }
 variable "network_sim_id" { type = string }
 variable "network_mgmt_id" { type = string }
+variable "network_external_id" { type = string }
