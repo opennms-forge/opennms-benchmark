@@ -25,3 +25,15 @@ variable "network_kafka_id" { type = string }
 variable "network_sim_id" { type = string }
 variable "network_mgmt_id" { type = string }
 variable "network_external_id" { type = string }
+variable "disk_sizes_gb" {
+  type        = map(number)
+  description = "Disk size in GB per VM"
+  default = {
+    database   = 20
+    core       = 30
+    kafka      = 20
+    minion     = 20
+    snmpsim    = 20
+    monitoring = 30
+  }
+}

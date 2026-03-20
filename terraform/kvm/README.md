@@ -26,9 +26,7 @@ virsh pool-start default   # if inactive
 
 ### 3. SSH key
 
-```bash
-export TF_VAR_ssh_public_key=$(cat ~/.ssh/id_rsa.pub)
-```
+The public key is read automatically from `ssh_key_path` in `kvm.tfvars` (defaults to `~/.ssh/id_rsa.pub`). No environment variable needed.
 
 ## Deploy
 
@@ -120,6 +118,67 @@ virsh -c qemu+ssh://user@your-kvm-host/system list --all
 ```
 
 A successful response (even an empty VM list) confirms the connection works.
+
+## Deploying to Multiple KVM Hosts
+
+To run the lab on different KVM hosts (e.g. switching between test machines), use one **tfvars file per host** combined with **Terraform workspaces** so each host gets its own isolated state.
+
+### 1. Create a tfvars file per host
+
+```
+kvm-mad-monkey.tfvars
+kvm-other-host.tfvars
+```
+
+Each file overrides only the host-specific values:
+
+```hcl
+# kvm-mad-monkey.tfvars
+libvirt_uri = "qemu+ssh://root@mad-monkey.labmonkeys.tech/system?no_verify=1"
+bridge_name = "br0"
+```
+
+```hcl
+# kvm-other-host.tfvars
+libvirt_uri = "qemu+ssh://root@other-host.example.com/system?no_verify=1"
+bridge_name = "br0"
+```
+
+All other values (`lab.tfvars`, `kvm.tfvars`) are shared across hosts.
+
+### 2. Create a workspace per host
+
+```bash
+terraform workspace new mad-monkey
+terraform workspace new other-host
+```
+
+List workspaces:
+
+```bash
+terraform workspace list
+```
+
+### 3. Deploy to a specific host
+
+Select the workspace, then apply with the matching tfvars:
+
+```bash
+terraform workspace select mad-monkey
+terraform apply -var-file=../lab.tfvars -var-file=kvm.tfvars -var-file=kvm-mad-monkey.tfvars
+
+terraform workspace select other-host
+terraform apply -var-file=../lab.tfvars -var-file=kvm.tfvars -var-file=kvm-other-host.tfvars
+```
+
+### 4. Destroy a specific host's lab
+
+```bash
+terraform workspace select mad-monkey
+terraform destroy -var-file=../lab.tfvars -var-file=kvm.tfvars -var-file=kvm-mad-monkey.tfvars
+```
+
+> Each workspace maintains completely independent state — destroying one host's lab has no effect on others.
 
 ## Network Quality Note
 

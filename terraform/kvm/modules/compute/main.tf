@@ -44,6 +44,7 @@ resource "libvirt_volume" "database" {
   pool           = var.storage_pool
   base_volume_id = libvirt_volume.ubuntu_base.id
   format         = "qcow2"
+  size           = var.disk_sizes_gb["database"] * 1024 * 1024 * 1024
 }
 
 resource "libvirt_volume" "core" {
@@ -51,6 +52,7 @@ resource "libvirt_volume" "core" {
   pool           = var.storage_pool
   base_volume_id = libvirt_volume.ubuntu_base.id
   format         = "qcow2"
+  size           = var.disk_sizes_gb["core"] * 1024 * 1024 * 1024
 }
 
 resource "libvirt_volume" "kafka" {
@@ -58,6 +60,7 @@ resource "libvirt_volume" "kafka" {
   pool           = var.storage_pool
   base_volume_id = libvirt_volume.ubuntu_base.id
   format         = "qcow2"
+  size           = var.disk_sizes_gb["kafka"] * 1024 * 1024 * 1024
 }
 
 resource "libvirt_volume" "minion" {
@@ -65,6 +68,7 @@ resource "libvirt_volume" "minion" {
   pool           = var.storage_pool
   base_volume_id = libvirt_volume.ubuntu_base.id
   format         = "qcow2"
+  size           = var.disk_sizes_gb["minion"] * 1024 * 1024 * 1024
 }
 
 resource "libvirt_volume" "snmpsim" {
@@ -72,6 +76,7 @@ resource "libvirt_volume" "snmpsim" {
   pool           = var.storage_pool
   base_volume_id = libvirt_volume.ubuntu_base.id
   format         = "qcow2"
+  size           = var.disk_sizes_gb["snmpsim"] * 1024 * 1024 * 1024
 }
 
 resource "libvirt_volume" "monitoring" {
@@ -79,6 +84,7 @@ resource "libvirt_volume" "monitoring" {
   pool           = var.storage_pool
   base_volume_id = libvirt_volume.ubuntu_base.id
   format         = "qcow2"
+  size           = var.disk_sizes_gb["monitoring"] * 1024 * 1024 * 1024
 }
 
 # Cloud-init disks
@@ -91,6 +97,7 @@ module "cloud_init_database" {
   interfaces = [
     { name = "enp1s0", address = var.ip_database, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_database_db, prefix = 26, gateway = null },
+    { name = "enp3s0", address = null, prefix = null, gateway = null },
   ]
 }
 
@@ -104,6 +111,7 @@ module "cloud_init_core" {
     { name = "enp1s0", address = var.ip_core, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_core_db, prefix = 26, gateway = null },
     { name = "enp3s0", address = var.ip_core_kafka, prefix = 26, gateway = null },
+    { name = "enp4s0", address = null, prefix = null, gateway = null },
   ]
 }
 
@@ -116,6 +124,7 @@ module "cloud_init_kafka" {
   interfaces = [
     { name = "enp1s0", address = var.ip_kafka, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_kafka_kafka, prefix = 26, gateway = null },
+    { name = "enp3s0", address = null, prefix = null, gateway = null },
   ]
 }
 
@@ -129,6 +138,7 @@ module "cloud_init_minion" {
     { name = "enp1s0", address = var.ip_minion, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_minion_kafka, prefix = 26, gateway = null },
     { name = "enp3s0", address = var.ip_minion_sim, prefix = 26, gateway = null },
+    { name = "enp4s0", address = null, prefix = null, gateway = null },
   ]
   extra_routes = [
     { to = var.snmp_sim_cidr, via = var.snmp_sim_gateway }
@@ -144,6 +154,7 @@ module "cloud_init_snmpsim" {
   interfaces = [
     { name = "enp1s0", address = var.ip_snmpsim, prefix = 26, gateway = null },
     { name = "enp2s0", address = var.ip_snmpsim, prefix = 26, gateway = null },
+    { name = "enp3s0", address = null, prefix = null, gateway = null },
   ]
 }
 
@@ -213,6 +224,7 @@ resource "libvirt_domain" "database" {
 
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_db_id }
+  network_interface { network_id = var.network_external_id }
 
   console {
     type        = "pty"
@@ -240,6 +252,7 @@ resource "libvirt_domain" "core" {
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_db_id }
   network_interface { network_id = var.network_kafka_id }
+  network_interface { network_id = var.network_external_id }
 
   console {
     type        = "pty"
@@ -266,6 +279,7 @@ resource "libvirt_domain" "kafka" {
 
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_kafka_id }
+  network_interface { network_id = var.network_external_id }
 
   console {
     type        = "pty"
@@ -293,6 +307,7 @@ resource "libvirt_domain" "minion" {
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_kafka_id }
   network_interface { network_id = var.network_sim_id }
+  network_interface { network_id = var.network_external_id }
 
   console {
     type        = "pty"
@@ -319,6 +334,7 @@ resource "libvirt_domain" "snmpsim" {
 
   network_interface { network_id = var.network_mgmt_id }
   network_interface { network_id = var.network_sim_id }
+  network_interface { network_id = var.network_external_id }
 
   console {
     type        = "pty"
