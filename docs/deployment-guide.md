@@ -102,6 +102,81 @@ Default credentials: OpenNMS and Grafana both use `admin / admin`.
 
 ## KVM/Local Deployment
 
+### Prerequisites — KVM host setup
+
+These steps are one-time host configuration required before `terraform apply`. They must be run directly on the KVM host (or over a console session, not SSH, because the bridge setup will briefly renegotiate the network).
+
+#### Create the `br0` bridge
+
+The `lab-external` libvirt network uses `mode = "bridge"` and attaches to `br0` on the host. This bridge must exist before Terraform runs — libvirt does not create host bridges, it only attaches to them.
+
+**Step 1 — identify your physical uplink:**
+
+```bash
+ip link show
+```
+
+Note the interface name (commonly `enp2s0`, `ens3`, `eth0`). Substitute it in the config below.
+
+**Step 2 — create `/etc/netplan/01-br0.yaml`:**
+
+```yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp2s0:           # replace with your actual uplink name
+      dhcp4: false    # bridge takes the IP, not the physical NIC
+  bridges:
+    br0:
+      interfaces: [enp2s0]
+      dhcp4: true     # bridge gets an IP from your external network
+      parameters:
+        stp: false    # no spanning tree — VMs attach without delay
+        forward-delay: 0
+```
+
+If the KVM host uses a static IP, replace the `br0` block with:
+
+```yaml
+    br0:
+      interfaces: [enp2s0]
+      dhcp4: false
+      addresses: [192.168.1.10/24]
+      routes:
+        - to: default
+          via: 192.168.1.1
+      nameservers:
+        addresses: [1.1.1.1, 8.8.8.8]
+      parameters:
+        stp: false
+        forward-delay: 0
+```
+
+**Step 3 — apply safely:**
+
+`netplan try` applies the config and auto-reverts after 120 seconds unless confirmed. Use this when applying over SSH — if the bridge fails to come up, the session recovers automatically:
+
+```bash
+sudo netplan try
+# Confirm once SSH is still reachable:
+# Accept changes [yes]:
+```
+
+**Step 4 — verify:**
+
+```bash
+ip link show br0          # should show state UP
+ip addr show br0          # should have an IP address
+bridge link show          # enp2s0 should appear as a bridge member
+```
+
+> **NetworkManager note:** If NetworkManager is managing your interfaces, either use `nmcli` to create the bridge or disable NM in favour of systemd-networkd before applying the netplan config:
+> ```bash
+> sudo systemctl disable --now NetworkManager
+> sudo systemctl enable --now systemd-networkd systemd-resolved
+> ```
+
 ### 1. Prepare the cloud image
 
 ```bash
@@ -181,12 +256,14 @@ ansible-playbook -i ../ansible-inventory.yml update-playbook.yml
 
 Simply run the new experiment's playbook. It reconfigures OpenNMS Core and Minion without reprovisioning VMs.
 
-### Tear down (Azure)
+### Tear down
 
 ```bash
-cd terraform/azure
-terraform destroy -var-file=../lab.tfvars -var-file=azure.tfvars
+./deploy.sh --provider azure --destroy
+./deploy.sh --provider kvm --destroy
 ```
+
+This runs `terraform destroy` with the correct tfvars and removes the generated `ansible-inventory.yml`. All VMs, NICs, disks, and network resources are deleted. The libvirt networks (`lab-mgmt`, `lab-db`, etc.) are also removed for KVM.
 
 ## Post-Reboot Checklist
 

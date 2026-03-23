@@ -9,5 +9,6 @@ resource "local_file" "ansible_inventory" {
     ip_monitoring = var.ip_monitoring
     admin_user    = var.admin_user
     ssh_key_path  = var.ssh_key_path
+    jump_host     = var.jump_host
   })
 }

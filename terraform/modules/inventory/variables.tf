@@ -9,3 +9,8 @@ variable "ssh_key_path" {
   type        = string
   description = "Path to private SSH key for Ansible"
 }
+variable "jump_host" {
+  type        = string
+  default     = ""
+  description = "Optional jump host IP. When set, all VMs except monitoring route through it via ProxyJump. monitoring's ansible_host is set to this IP directly."
+}

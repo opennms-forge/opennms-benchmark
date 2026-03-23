@@ -1,5 +1,9 @@
 #cloud-config
 
+hostname: ${vm_name}
+fqdn: ${vm_name}.lab.local
+manage_etc_hosts: false
+
 users:
   - name: ${admin_user}
     groups: sudo

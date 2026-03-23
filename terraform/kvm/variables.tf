@@ -29,3 +29,7 @@ variable "storage_pool" { type = string }
 variable "ubuntu_cloud_image" { type = string }
 variable "ssh_key_path" { type = string }
 variable "bridge_name" { type = string }
+variable "jump_host" {
+  type    = string
+  default = ""
+}

@@ -1,5 +1,19 @@
 ## file: opennms-playbook.yml
 
+- name: Wait for system readiness
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH
+      wait_for_connection:
+        timeout: 300
+
+    - name: Wait for cloud-init to complete
+      become: true
+      command: cloud-init status --wait
+      changed_when: false
+      timeout: 120
+
 - name: Basic configuration and tooling
   hosts: all
   become: true
@@ -15,7 +29,7 @@
     - docker-ce
 
 - name: Monitoring services
-  hosts: monitoring
+  hosts: mon_servers
   become: true
   roles:
     - monitoring

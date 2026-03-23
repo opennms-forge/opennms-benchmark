@@ -2,6 +2,10 @@ all:
   vars:
     ansible_user: ${admin_user}
     ansible_ssh_private_key_file: ${ssh_key_path}
+    ansible_python_interpreter: /usr/bin/python3
+%{ if jump_host != "" ~}
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyJump=${admin_user}@${jump_host}'
+%{ endif ~}
   hosts:
     database:
       ansible_host: ${ip_database}
@@ -14,7 +18,12 @@ all:
     snmpsim:
       ansible_host: ${ip_snmpsim}
     monitoring:
+%{ if jump_host != "" ~}
+      ansible_host: ${jump_host}
+      ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+%{ else ~}
       ansible_host: ${ip_monitoring}
+%{ endif ~}
   children:
     db_servers:
       hosts:
@@ -31,6 +40,17 @@ all:
     simulators:
       hosts:
         snmpsim:
-    monitoring:
+    mon_servers:
       hosts:
         monitoring:
+    docker_engine:
+      hosts:
+        monitoring:
+        kafka:
+        snmpsim:
+    snmp_sim:
+      hosts:
+        snmpsim:
+    kafka_ui:
+      hosts:
+        kafka:
