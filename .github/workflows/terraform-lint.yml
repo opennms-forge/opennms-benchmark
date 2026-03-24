@@ -70,7 +70,7 @@ jobs:
 
       - name: terraform init
         # bpg/proxmox is a community provider and installs without a running host
-        run: terraform init -backend=false -upgrade
+        run: terraform init -backend=false
         working-directory: terraform/proxmox
 
       - name: terraform validate

@@ -5,14 +5,13 @@ ethernets:
 %{ if iface.address != null ~}
     addresses:
       - ${iface.address}/${iface.prefix}
-%{ if iface.gateway != null ~}
+%{ if iface.gateway != null || length(iface.routes) > 0 ~}
     routes:
+%{ if iface.gateway != null ~}
       - to: default
         via: ${iface.gateway}
 %{ endif ~}
-%{ if length(extra_routes) > 0 && iface.gateway == null ~}
-    routes:
-%{ for route in extra_routes ~}
+%{ for route in iface.routes ~}
       - to: ${route.to}
         via: ${route.via}
 %{ endfor ~}

@@ -46,6 +46,9 @@ crash.log
 # *.tfvars
 # *.tfvars.json
 
+# Proxmox tfvars contains an API token — gitignored, use proxmox.tfvars.example as template
+terraform/proxmox/proxmox.tfvars
+
 # CLI config files
 .terraformrc
 terraform.rc

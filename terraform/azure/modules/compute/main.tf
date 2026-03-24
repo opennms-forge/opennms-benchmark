@@ -65,11 +65,7 @@ module "cloud_init_minion" {
   interfaces = [
     { name = "eth0", address = var.ip_minion, prefix = 26, gateway = null },
     { name = "eth1", address = var.ip_minion_kafka, prefix = 26, gateway = null },
-    { name = "eth2", address = var.ip_minion_sim, prefix = 26, gateway = null },
-  ]
-  # SNMP simulation route — only the Minion needs to reach 10.42.0.0/16
-  extra_routes = [
-    { to = var.snmp_sim_cidr, via = var.snmp_sim_gateway }
+    { name = "eth2", address = var.ip_minion_sim, prefix = 26, gateway = null, routes = [{ to = var.snmp_sim_cidr, via = var.snmp_sim_gateway }] },
   ]
 }
 

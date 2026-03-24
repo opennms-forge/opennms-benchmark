@@ -1,12 +1,14 @@
 # Proxmox-specific variables
 # Usage:
+#   cp proxmox.tfvars.example proxmox.tfvars
+#   # Edit proxmox.tfvars with your real values (it is gitignored)
 #   terraform init
 #   terraform apply -var-file=../lab.tfvars -var-file=proxmox.tfvars
 
 # Proxmox API connection
 proxmox_endpoint     = "https://192.168.1.10:8006/" # Replace with your Proxmox host IP/FQDN
-proxmox_api_token    = "root@pam!terraform=00000000-0000-0000-0000-000000000000"
-proxmox_insecure     = true # Set false if Proxmox has a valid TLS certificate
+proxmox_api_token    = "user@realm!token-name=00000000-0000-0000-0000-000000000000" # Replace with your API token
+proxmox_insecure     = false # Set true only if Proxmox has a self-signed certificate
 proxmox_ssh_username = "root"
 
 # Proxmox node name (visible in the Proxmox UI datacenter tree)
@@ -49,6 +51,17 @@ bridge_ext   = "vmbr4" # External DHCP bridge — monitoring VM gets a routable 
 #   minion     = 199
 #   monitoring = 200
 #   snmpsim    = 201
+# }
+
+# Disk sizes — IMPORTANT: if overriding, provide ALL six keys. Terraform replaces the entire
+# map; a partial override (e.g. only "core") drops the remaining keys and causes a plan error.
+# disk_sizes_gb = {
+#   database   = 20
+#   core       = 30
+#   kafka      = 20
+#   minion     = 20
+#   snmpsim    = 20
+#   monitoring = 30
 # }
 
 # jump_host = ""  # Set after first apply: external IP of the monitoring VM (from bridge_ext DHCP).

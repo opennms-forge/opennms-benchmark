@@ -1,8 +1,8 @@
-# Shared (from lab.tfvars)
-variable "lab_cidr" { type = string }
-variable "subnet_db" { type = string }
+# Shared (from lab.tfvars) — declared for cross-provider tfvars compatibility; not used by this module
+variable "lab_cidr"    { type = string }
+variable "subnet_db"   { type = string }
 variable "subnet_kafka" { type = string }
-variable "subnet_sim" { type = string }
+variable "subnet_sim"  { type = string }
 variable "subnet_mgmt" { type = string }
 variable "ip_database" { type = string }
 variable "ip_core" { type = string }
@@ -21,7 +21,8 @@ variable "snmp_sim_cidr" { type = string }
 variable "snmp_sim_gateway" { type = string }
 variable "admin_user" { type = string }
 variable "vm_names" {
-  type = map(string)
+  type    = map(string)
+  default = null # accepted from lab.tfvars; not used by this module
 }
 
 # Proxmox-specific (from proxmox.tfvars)
@@ -101,7 +102,7 @@ variable "bridge_sim" {
 variable "bridge_ext" {
   type        = string
   default     = "vmbr4"
-  description = "Proxmox bridge with external DHCP access (for monitoring external IP)"
+  description = "Proxmox bridge with external DHCP access — all VMs get a DHCP NIC on this bridge; monitoring VM uses its address as the jump host"
 }
 
 variable "vm_ids" {
@@ -114,6 +115,19 @@ variable "vm_ids" {
     minion     = 199
     monitoring = 200
     snmpsim    = 201
+  }
+}
+
+variable "disk_sizes_gb" {
+  type        = map(number)
+  description = "Disk size in GB per VM"
+  default = {
+    database   = 20
+    core       = 30
+    kafka      = 20
+    minion     = 20
+    snmpsim    = 20
+    monitoring = 30
   }
 }
 

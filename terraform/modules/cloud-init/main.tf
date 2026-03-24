@@ -1,7 +1,6 @@
 locals {
   network_config = templatefile("${path.module}/templates/network-config.yaml.tftpl", {
-    interfaces   = var.interfaces
-    extra_routes = var.extra_routes
+    interfaces = var.interfaces
   })
 
   user_data = templatefile("${path.module}/templates/user-data.yaml.tftpl", {
