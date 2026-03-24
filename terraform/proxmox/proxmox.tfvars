@@ -1,0 +1,55 @@
+# Proxmox-specific variables
+# Usage:
+#   terraform init
+#   terraform apply -var-file=../lab.tfvars -var-file=proxmox.tfvars
+
+# Proxmox API connection
+proxmox_endpoint     = "https://192.168.1.10:8006/" # Replace with your Proxmox host IP/FQDN
+proxmox_api_token    = "root@pam!terraform=00000000-0000-0000-0000-000000000000"
+proxmox_insecure     = true # Set false if Proxmox has a valid TLS certificate
+proxmox_ssh_username = "root"
+
+# Proxmox node name (visible in the Proxmox UI datacenter tree)
+proxmox_node = "pve"
+
+# Template VM — create once on the Proxmox host before running terraform apply:
+#   qm create 9000 --name ubuntu-24.04-cloud --memory 2048 --cores 2 --net0 virtio,bridge=vmbr0
+#   qm importdisk 9000 noble-server-cloudimg-amd64.img local-lvm
+#   qm set 9000 --scsihw virtio-scsi-pci --scsi0 local-lvm:vm-9000-disk-0
+#   qm set 9000 --ide2 local-lvm:cloudinit
+#   qm set 9000 --serial0 socket --vga serial0
+#   qm set 9000 --boot c --bootdisk scsi0
+#   qm set 9000 --ipconfig0 ip=dhcp
+#   qm template 9000
+template_vm_id = 9000
+
+# Storage
+storage_pool       = "local-lvm" # LVM-thin datastore for VM disks
+snippets_datastore = "local"     # File-based datastore for cloud-init snippets (not LVM-thin)
+
+# SSH key for VM access
+ssh_key_path = "~/.ssh/id_rsa"
+
+# Proxmox bridges — configure these in Proxmox (Node > Network) before running terraform apply.
+# Each bridge corresponds to one lab subnet.
+# VM interface names inside Ubuntu 24.04 VMs (q35 + virtio-net): ens18, ens19, ens20, ens21.
+# Verify on your setup with: ssh ubuntu@<vm-ip> ip link
+bridge_mgmt  = "vmbr0" # Management subnet 192.0.2.192/26 — NAT or routed for operator SSH
+bridge_db    = "vmbr1" # Database subnet 192.0.2.0/26
+bridge_kafka = "vmbr2" # Kafka subnet 192.0.2.64/26
+bridge_sim   = "vmbr3" # SNMP simulation subnet 192.0.2.128/26
+bridge_ext   = "vmbr4" # External DHCP bridge — monitoring VM gets a routable IP on this bridge
+
+# VM IDs — must be unique across your Proxmox cluster.
+# Defaults match the last octet of each VM's management IP.
+# vm_ids = {
+#   database   = 196
+#   core       = 197
+#   kafka      = 198
+#   minion     = 199
+#   monitoring = 200
+#   snmpsim    = 201
+# }
+
+# jump_host = ""  # Set after first apply: external IP of the monitoring VM (from bridge_ext DHCP).
+#                 # Re-run apply to regenerate the Ansible inventory with ProxyJump enabled.

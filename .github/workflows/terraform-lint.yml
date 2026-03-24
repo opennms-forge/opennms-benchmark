@@ -58,6 +58,26 @@ jobs:
         run: terraform validate
         working-directory: terraform/kvm
 
+  validate-proxmox:
+    name: Validate (Proxmox)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.5"
+
+      - name: terraform init
+        # bpg/proxmox is a community provider and installs without a running host
+        run: terraform init -backend=false -upgrade
+        working-directory: terraform/proxmox
+
+      - name: terraform validate
+        # validate checks syntax and type correctness only — no provider API calls
+        run: terraform validate
+        working-directory: terraform/proxmox
+
   tflint:
     name: TFLint
     runs-on: ubuntu-latest
@@ -87,3 +107,13 @@ jobs:
       - name: TFLint (KVM)
         run: tflint --recursive --minimum-failure-severity=error
         working-directory: terraform/kvm
+
+      - name: Init TFLint (Proxmox)
+        run: tflint --init
+        working-directory: terraform/proxmox
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: TFLint (Proxmox)
+        run: tflint --recursive --minimum-failure-severity=error
+        working-directory: terraform/proxmox

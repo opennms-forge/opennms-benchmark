@@ -1,0 +1,43 @@
+variable "proxmox_node" { type = string }
+variable "template_vm_id" { type = number }
+variable "storage_pool" { type = string }
+variable "snippets_datastore" { type = string }
+variable "admin_user" { type = string }
+variable "ssh_public_key" {
+  type      = string
+  sensitive = true
+}
+variable "snmp_sim_cidr" { type = string }
+variable "snmp_sim_gateway" { type = string }
+variable "hosts" { type = map(string) }
+variable "ip_database" { type = string }
+variable "ip_core" { type = string }
+variable "ip_kafka" { type = string }
+variable "ip_minion" { type = string }
+variable "ip_snmpsim" { type = string }
+variable "ip_monitoring" { type = string }
+variable "ip_database_db" { type = string }
+variable "ip_core_db" { type = string }
+variable "ip_core_kafka" { type = string }
+variable "ip_kafka_kafka" { type = string }
+variable "ip_minion_kafka" { type = string }
+variable "ip_minion_sim" { type = string }
+variable "ip_snmpsim_sim" { type = string }
+variable "bridge_mgmt" { type = string }
+variable "bridge_db" { type = string }
+variable "bridge_kafka" { type = string }
+variable "bridge_sim" { type = string }
+variable "bridge_ext" { type = string }
+variable "vm_ids" { type = map(number) }
+variable "disk_sizes_gb" {
+  type        = map(number)
+  description = "Disk size in GB per VM"
+  default = {
+    database   = 20
+    core       = 30
+    kafka      = 20
+    minion     = 20
+    snmpsim    = 20
+    monitoring = 30
+  }
+}
