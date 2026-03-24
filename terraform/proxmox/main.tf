@@ -40,6 +40,7 @@ module "compute" {
   bridge_sim         = var.bridge_sim
   bridge_ext         = var.bridge_ext
   vm_ids             = var.vm_ids
+  disk_sizes_gb      = var.disk_sizes_gb
 }
 
 module "inventory" {

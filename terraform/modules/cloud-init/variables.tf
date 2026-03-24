@@ -19,17 +19,9 @@ variable "interfaces" {
     address = optional(string)
     prefix  = optional(number)
     gateway = optional(string)
+    routes  = optional(list(object({ to = string, via = string })), [])
   }))
-  description = "Network interfaces to configure via cloud-init network-config v2. Set address=null for DHCP."
-}
-
-variable "extra_routes" {
-  type = list(object({
-    to  = string
-    via = string
-  }))
-  default     = []
-  description = "Additional static routes (used for Minion SNMP simulation routing)"
+  description = "Network interfaces to configure via cloud-init network-config v2. Set address=null for DHCP. Use routes for per-interface static routes."
 }
 
 variable "hosts" {

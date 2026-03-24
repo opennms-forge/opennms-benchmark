@@ -66,11 +66,8 @@ module "cloud_init_minion" {
   interfaces = [
     { name = "ens18", address = var.ip_minion, prefix = 26, gateway = null },
     { name = "ens19", address = var.ip_minion_kafka, prefix = 26, gateway = null },
-    { name = "ens20", address = var.ip_minion_sim, prefix = 26, gateway = null },
+    { name = "ens20", address = var.ip_minion_sim, prefix = 26, gateway = null, routes = [{ to = var.snmp_sim_cidr, via = var.snmp_sim_gateway }] },
     { name = "ens21", address = null, prefix = null, gateway = null },
-  ]
-  extra_routes = [
-    { to = var.snmp_sim_cidr, via = var.snmp_sim_gateway }
   ]
 }
 
