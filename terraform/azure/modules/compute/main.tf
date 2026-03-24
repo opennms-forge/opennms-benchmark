@@ -87,7 +87,7 @@ module "cloud_init_snmpsim" {
 
 module "cloud_init_monitoring" {
   source         = "../../../modules/cloud-init"
-  vm_name        = "mon"
+  vm_name        = "monitoring"
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
@@ -242,7 +242,7 @@ resource "azurerm_linux_virtual_machine" "snmpsim" {
 }
 
 resource "azurerm_linux_virtual_machine" "monitoring" {
-  name                         = "mon"
+  name                         = "monitoring"
   resource_group_name          = var.resource_group
   location                     = var.location
   size                         = var.vm_size_small
