@@ -98,13 +98,15 @@ git submodule update --init --recursive
 
 ## Services and Ports
 
-| Service | URL |
-|---|---|
-| OpenNMS UI | `http://192.0.2.197:8980/opennms` |
-| Grafana | `http://192.0.2.201:3000` |
-| Jaeger | `http://192.0.2.201:16686` |
-| Kafka UI | `http://192.0.2.201:8080` |
-| Prometheus | `http://192.0.2.201:9090` |
+| Service | URL (via Traefik proxy) | Direct URL |
+|---|---|---|
+| OpenNMS UI | `https://<monitoring>/opennms` | `http://192.0.2.197:8980/opennms` |
+| Grafana | `https://<monitoring>/grafana` | `http://192.0.2.200:3000` |
+| Jaeger | `https://<monitoring>/jaeger` | `http://192.0.2.200:16686` |
+| Prometheus | `https://<monitoring>/prometheus` | `http://192.0.2.200:9090` |
+| Kafka UI | `https://<monitoring>/kafka` | `http://192.0.2.198:8080` |
+
+`<monitoring>` is the monitoring VM's external IP or hostname.
 
 ## Git Workflow
 

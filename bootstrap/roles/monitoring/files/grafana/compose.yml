@@ -14,6 +14,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_INSTALL_PLUGINS: opennms-opennms-app
       GF_FEATURE_TOGGLES_ENABLE: nestedFolders
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
     volumes:
       - data-grafana:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning
