@@ -1,0 +1,70 @@
+http:
+  routers:
+    grafana:
+      rule: "PathPrefix(`/grafana`)"
+      entryPoints:
+        - websecure
+      service: grafana
+      tls: {}
+
+    prometheus:
+      rule: "PathPrefix(`/prometheus`)"
+      entryPoints:
+        - websecure
+      service: prometheus
+      tls: {}
+
+    jaeger:
+      rule: "PathPrefix(`/jaeger`)"
+      entryPoints:
+        - websecure
+      service: jaeger
+      middlewares:
+        - jaeger-strip
+      tls: {}
+
+    opennms:
+      rule: "PathPrefix(`/opennms`)"
+      entryPoints:
+        - websecure
+      service: opennms
+      tls: {}
+
+    kafka:
+      rule: "PathPrefix(`/kafka`)"
+      entryPoints:
+        - websecure
+      service: kafka
+      tls: {}
+
+  middlewares:
+    jaeger-strip:
+      stripPrefix:
+        prefixes:
+          - /jaeger
+
+  services:
+    grafana:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3000"
+
+    prometheus:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:9090"
+
+    jaeger:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:16686"
+
+    opennms:
+      loadBalancer:
+        servers:
+          - url: "http://192.0.2.197:8980"
+
+    kafka:
+      loadBalancer:
+        servers:
+          - url: "http://192.0.2.198:8080"

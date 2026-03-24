@@ -165,7 +165,7 @@ module "cloud_init_snmpsim" {
 
 module "cloud_init_monitoring" {
   source         = "../../../modules/cloud-init"
-  vm_name        = "mon"
+  vm_name        = "monitoring"
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
   hosts          = var.hosts
@@ -357,7 +357,7 @@ resource "libvirt_domain" "snmpsim" {
 }
 
 resource "libvirt_domain" "monitoring" {
-  name      = "mon"
+  name      = "monitoring"
   machine   = "q35"
   memory    = 4096
   vcpu      = 2

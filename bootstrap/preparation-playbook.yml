@@ -33,6 +33,7 @@
   become: true
   roles:
     - monitoring
+    - traefik
 
 - name: SNMP-Simulator
   hosts: snmp_sim

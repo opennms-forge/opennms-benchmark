@@ -11,5 +11,6 @@ services:
       TZ: UTC
       KAFKA_CLUSTERS_0_NAME: opennms-benchmark
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 192.0.2.68:9092
+      SERVER_SERVLET_CONTEXT_PATH: /kafka
     ports:
       - "8080:8080/tcp"

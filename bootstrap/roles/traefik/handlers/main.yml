@@ -1,0 +1,5 @@
+---
+- name: restart traefik
+  ansible.builtin.service:
+    name: docker-compose@traefik.service
+    state: restarted
