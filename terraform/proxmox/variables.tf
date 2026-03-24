@@ -1,8 +1,8 @@
 # Shared (from lab.tfvars) — declared for cross-provider tfvars compatibility; not used by this module
-variable "lab_cidr"    { type = string }
-variable "subnet_db"   { type = string }
+variable "lab_cidr" { type = string }
+variable "subnet_db" { type = string }
 variable "subnet_kafka" { type = string }
-variable "subnet_sim"  { type = string }
+variable "subnet_sim" { type = string }
 variable "subnet_mgmt" { type = string }
 variable "ip_database" { type = string }
 variable "ip_core" { type = string }
