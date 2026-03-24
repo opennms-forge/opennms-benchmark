@@ -16,6 +16,7 @@ variable "ip_core_kafka" { type = string }
 variable "ip_kafka_kafka" { type = string }
 variable "ip_minion_kafka" { type = string }
 variable "ip_minion_sim" { type = string }
+variable "ip_snmpsim_sim" { type = string }
 variable "snmp_sim_cidr" { type = string }
 variable "snmp_sim_gateway" { type = string }
 variable "admin_user" { type = string }
