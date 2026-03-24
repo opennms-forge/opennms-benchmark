@@ -5,4 +5,5 @@ ubuntu_cloud_image = "https://cloud-images.ubuntu.com/noble/current/noble-server
 ssh_key_path       = "~/.ssh/id_rsa"
 admin_user         = "ubuntu" # Ubuntu cloud image default user
 bridge_name        = "br0"   # Host bridge for external DHCP access on monintoring VM
-jump_host          = "192.168.11.65" # Set to mon's br0 DHCP IP when running Ansible from outside the KVM host, e.g. jump_host = "10.0.0.42"
+# jump_host        = ""      # Auto-discovered by deploy.sh from virsh domifaddr after VM boot
+                              # Set manually only if auto-discovery fails: jump_host = "10.0.0.42"
