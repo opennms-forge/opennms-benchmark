@@ -1,3 +1,5 @@
+![Alt](https://repobeats.axiom.co/api/embed/6db86e481086f29ed11e5a869d2c2ddf48e2cd1d.svg "Repobeats analytics image")
+
 # 👩‍🔬 Benchmark Lab
 
 Running OpenNMS components in various environments and workloads, makes it complicated to size and scale.
