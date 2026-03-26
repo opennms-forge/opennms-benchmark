@@ -16,6 +16,9 @@ postgres_hba_permissions_v4: "192.0.2.0/24"
 
 kafka_bootstrap_servers: "192.0.2.68:9092"
 
+opennms_properties_webapp:
+  opennms.web.base-url: https://%x%c/
+
 opennms_message_broker: kafka
 
 opennms_properties_message_broker:
