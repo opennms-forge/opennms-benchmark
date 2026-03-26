@@ -10,7 +10,7 @@ services:
           memory: 256m
     environment:
       TZ: UTC
-      PGADMIN_DEFAULT_EMAIL: admin@lab.local
+      PGADMIN_DEFAULT_EMAIL: admin@benchmark.lab
       PGADMIN_DEFAULT_PASSWORD: admin
       SCRIPT_NAME: /pgadmin
     volumes:
