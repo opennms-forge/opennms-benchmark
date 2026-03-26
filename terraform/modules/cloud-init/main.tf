@@ -9,5 +9,6 @@ locals {
     ssh_public_key = var.ssh_public_key
     hosts          = var.hosts
     extra_packages = var.extra_packages
+    local_routes   = var.local_routes
   })
 }

@@ -34,3 +34,9 @@ variable "extra_packages" {
   default     = []
   description = "Additional packages to install via cloud-init. Use for provider-specific agents (e.g. qemu-guest-agent for KVM)."
 }
+
+variable "local_routes" {
+  type        = list(string)
+  default     = []
+  description = "CIDRs to add as local routes on the loopback interface (ip route add local <cidr> dev lo). Installed as a persistent systemd service so routes survive reboots."
+}
