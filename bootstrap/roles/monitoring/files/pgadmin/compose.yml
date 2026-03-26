@@ -1,0 +1,22 @@
+---
+services:
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    deploy:
+      resources:
+        limits:
+          cpus: 1.0
+          memory: 256m
+    environment:
+      TZ: UTC
+      PGADMIN_DEFAULT_EMAIL: admin@lab.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      SCRIPT_NAME: /pgadmin
+    volumes:
+      - data-pgadmin:/var/lib/pgadmin
+    ports:
+      - "5050:80/tcp"
+
+volumes:
+  data-pgadmin: {}

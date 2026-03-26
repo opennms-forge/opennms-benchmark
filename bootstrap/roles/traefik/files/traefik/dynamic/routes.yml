@@ -33,6 +33,12 @@ http:
         - websecure
       service: kafka
       tls: {}
+    pgadmin:
+      rule: "PathPrefix(`/pgadmin`)"
+      entryPoints:
+        - websecure
+      service: pgadmin
+      tls: {}
   middlewares:
     jaeger-strip:
       stripPrefix:
@@ -64,3 +70,8 @@ http:
       loadBalancer:
         servers:
           - url: "http://192.0.2.198:8080"
+
+    pgadmin:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:5050"
