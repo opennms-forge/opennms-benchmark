@@ -77,7 +77,7 @@ module "cloud_init_netsim" {
   hosts          = var.hosts
   interfaces = [
     { name = "eth0", address = var.ip_netsim, prefix = 26, gateway = null },
-    { name = "eth1", address = var.ip_netsim, prefix = 26, gateway = null },
+    { name = "eth1", address = var.ip_netsim_sim, prefix = 26, gateway = null },
   ]
 }
 

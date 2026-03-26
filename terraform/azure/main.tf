@@ -77,6 +77,7 @@ module "compute" {
   ip_kafka_kafka      = var.ip_kafka_kafka
   ip_minion_kafka     = var.ip_minion_kafka
   ip_minion_sim       = var.ip_minion_sim
+  ip_netsim_sim       = var.ip_netsim_sim
   nic_database_mgmt   = module.network.nic_database_mgmt
   nic_database_db     = module.network.nic_database_db
   nic_core_mgmt       = module.network.nic_core_mgmt

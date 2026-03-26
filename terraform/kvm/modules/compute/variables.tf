@@ -20,6 +20,7 @@ variable "ip_core_kafka" { type = string }
 variable "ip_kafka_kafka" { type = string }
 variable "ip_minion_kafka" { type = string }
 variable "ip_minion_sim" { type = string }
+variable "ip_netsim_sim" { type = string }
 variable "network_db_id" { type = string }
 variable "network_kafka_id" { type = string }
 variable "network_sim_id" { type = string }

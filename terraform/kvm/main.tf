@@ -41,6 +41,7 @@ module "compute" {
   ip_kafka_kafka      = var.ip_kafka_kafka
   ip_minion_kafka     = var.ip_minion_kafka
   ip_minion_sim       = var.ip_minion_sim
+  ip_netsim_sim       = var.ip_netsim_sim
   network_db_id       = module.network.network_db_id
   network_kafka_id    = module.network.network_kafka_id
   network_sim_id      = module.network.network_sim_id

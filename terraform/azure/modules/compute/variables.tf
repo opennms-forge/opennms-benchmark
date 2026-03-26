@@ -24,6 +24,7 @@ variable "ip_core_kafka" { type = string }
 variable "ip_kafka_kafka" { type = string }
 variable "ip_minion_kafka" { type = string }
 variable "ip_minion_sim" { type = string }
+variable "ip_netsim_sim" { type = string }
 variable "nic_database_mgmt" { type = string }
 variable "nic_database_db" { type = string }
 variable "nic_core_mgmt" { type = string }
