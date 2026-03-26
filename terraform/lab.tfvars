@@ -32,12 +32,12 @@ net_sim_gateway = "192.0.2.134"
 
 # VM names
 vm_names = {
-  database   = "database"
-  core       = "core"
-  kafka      = "kafka"
-  minion     = "minion"
-  netsim     = "netsim"
-  monitoring = "monitoring"
+  database   = "db-benchmark-01"
+  core       = "core-benchmark-01"
+  kafka      = "kafka-benchmark-01"
+  minion     = "minion-benchmark-01"
+  netsim     = "netsim-benchmark-01"
+  monitoring = "mon-benchmark-01"
 }
 
 # Admin username
