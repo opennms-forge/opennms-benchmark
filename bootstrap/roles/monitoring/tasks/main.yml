@@ -7,8 +7,8 @@
   tags: ["monitoring", "prometheus"]
 
 - name: Prometheus configuration
-  ansible.builtin.copy:
-    src: prometheus/prometheus.yml
+  ansible.builtin.template:
+    src: prometheus/prometheus.yml.j2
     dest: /etc/docker/prometheus/prometheus.yml
     mode: "0644"
   notify:
@@ -38,15 +38,6 @@
     mode: "0755"
   tags: ["monitoring", "grafana"]
 
-- name: Grafana provisioning
-  ansible.builtin.copy:
-    src: grafana/provisioning
-    dest: /etc/docker/grafana
-    mode: "0644"
-  notify:
-    - Restart grafana
-  tags: ["monitoring", "grafana"]
-
 - name: Create Grafana compose
   ansible.builtin.copy:
     src: grafana/compose.yml
@@ -61,6 +52,24 @@
     name: docker-compose@grafana.service
     state: started
     enabled: true
+  tags: ["monitoring", "grafana"]
+
+- name: Grafana provisioning
+  ansible.builtin.copy:
+    src: grafana/provisioning
+    dest: /etc/docker/grafana
+    mode: "0644"
+  notify:
+    - Restart grafana
+  tags: ["monitoring", "grafana"]
+
+- name: Grafana PostgreSQL data source
+  ansible.builtin.template:
+    src: grafana/provisioning/datasources/postgresql.yml.j2
+    dest: /etc/docker/grafana/provisioning/datasources/postgresql.yml
+    mode: "0644"
+  notify:
+    - Restart grafana
   tags: ["monitoring", "grafana"]
 
 - name: Create Jaeger directory

@@ -31,12 +31,27 @@ scrape_configs:
 
   - job_name: "node"
     static_configs:
-      - targets: ["database:9100", "core:9100", "kafka:9100", "minion:9100", "mon:9100", "netsim:9100"]
+      - targets:
+{% for host in groups['all'] %}
+          - "{{ host }}:9100"
+{% endfor %}
 
   - job_name: "jmx"
     tls_config:
       insecure_skip_verify: true
     static_configs:
-      - targets: ["core:9299"]
+{% for host in groups['core'] | default([]) %}
+      - targets: ["{{ host }}:9299"]
         labels:
           app: "core"
+{% endfor %}
+{% for host in groups['minion'] | default([]) %}
+      - targets: ["{{ host }}:9299"]
+        labels:
+          app: "minion"
+{% endfor %}
+{% for host in groups['sentinel'] | default([]) %}
+      - targets: ["{{ host }}:9299"]
+        labels:
+          app: "sentinel"
+{% endfor %}
