@@ -7,7 +7,7 @@ services:
       resources:
         limits:
           cpus: 1.0
-          memory: 256m
+          memory: 512m
     environment:
       TZ: UTC
       PGADMIN_DEFAULT_EMAIL: admin@benchmark.lab
