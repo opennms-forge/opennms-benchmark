@@ -13,6 +13,8 @@
       become: true
       ansible.builtin.command: cloud-init status --wait
       changed_when: false
+      failed_when: result.rc not in [0, 2]
+      register: result
       timeout: 120
 
 - name: Basic configuration and tooling

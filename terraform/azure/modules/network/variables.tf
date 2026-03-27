@@ -18,5 +18,6 @@ variable "ip_minion_kafka" { type = string }
 variable "ip_minion_sim" { type = string }
 variable "ip_minion" { type = string }
 variable "ip_netsim" { type = string }
+variable "ip_netsim_sim" { type = string }
 variable "ip_monitoring" { type = string }
 variable "operator_cidr" { type = string }

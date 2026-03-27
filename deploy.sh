@@ -42,11 +42,19 @@ TF_DIR="$REPO_ROOT/terraform/$PROVIDER"
 if $DESTROY; then
   echo "==> Destroying infrastructure ($PROVIDER)..."
   cd "$TF_DIR"
+
+  OPERATOR_CIDR_ARG=""
+  if [[ "$PROVIDER" == "azure" ]]; then
+    OPERATOR_IP=$(host -4 myip.opendns.com resolver1.opendns.com 2>/dev/null | awk '/has address/ {print $NF; exit}')
+    [[ -n "$OPERATOR_IP" ]] && OPERATOR_CIDR_ARG="-var operator_cidr=${OPERATOR_IP}/32"
+  fi
+
   terraform init -upgrade -input=false
   # shellcheck disable=SC2086
   terraform destroy \
     -var-file="../lab.tfvars" \
     -var-file="${PROVIDER}.tfvars" \
+    $OPERATOR_CIDR_ARG \
     -input=false \
     -auto-approve \
     $TF_EXTRA_ARGS
@@ -57,11 +65,24 @@ fi
 
 echo "==> [1/3] Provisioning infrastructure ($PROVIDER)..."
 cd "$TF_DIR"
+
+OPERATOR_CIDR_ARG=""
+if [[ "$PROVIDER" == "azure" ]]; then
+  OPERATOR_IP=$(host -4 myip.opendns.com resolver1.opendns.com 2>/dev/null | awk '/has address/ {print $NF; exit}')
+  if [[ -n "$OPERATOR_IP" ]]; then
+    echo "    detected operator IP: $OPERATOR_IP"
+    OPERATOR_CIDR_ARG="-var operator_cidr=${OPERATOR_IP}/32"
+  else
+    echo "    warning: could not detect public IP; SSH access on monitoring VM will be open to *"
+  fi
+fi
+
 terraform init -upgrade -input=false
 # shellcheck disable=SC2086
 terraform apply \
   -var-file="../lab.tfvars" \
   -var-file="${PROVIDER}.tfvars" \
+  $OPERATOR_CIDR_ARG \
   -input=false \
   -auto-approve \
   $TF_EXTRA_ARGS

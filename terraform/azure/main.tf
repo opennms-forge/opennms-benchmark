@@ -47,6 +47,7 @@ module "network" {
   ip_minion_sim   = var.ip_minion_sim
   ip_minion       = var.ip_minion
   ip_netsim       = var.ip_netsim
+  ip_netsim_sim   = var.ip_netsim_sim
   ip_monitoring   = var.ip_monitoring
   operator_cidr   = var.operator_cidr
 }
