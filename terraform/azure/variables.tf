@@ -20,6 +20,7 @@ variable "ip_netsim_sim" { type = string }
 variable "net_sim_cidr" { type = string }
 variable "net_sim_gateway" { type = string }
 variable "admin_user" { type = string }
+variable "vm_names" { type = map(string) }
 
 # Azure-specific (from azure.tfvars)
 variable "location" { type = string }

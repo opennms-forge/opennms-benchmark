@@ -72,7 +72,7 @@ resource "azurerm_network_security_group" "monitoring" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
-    source_address_prefix      = var.operator_cidr
+    source_address_prefix      = var.operator_cidr != "" ? var.operator_cidr : "*"
     destination_address_prefix = "*"
   }
 }
@@ -210,7 +210,7 @@ resource "azurerm_network_interface" "netsim_sim" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.sim.id
     private_ip_address_allocation = "Static"
-    private_ip_address            = var.ip_netsim
+    private_ip_address            = var.ip_netsim_sim
   }
 }
 
