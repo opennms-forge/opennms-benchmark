@@ -17,6 +17,9 @@ jobs:
         with:
           submodules: false
 
+      - name: Install collections
+        run: ansible-galaxy collection install -r bootstrap/requirements.yml -p ~/.ansible/collections --force-with-deps
+
       - name: Run ansible-lint
         uses: ansible/ansible-lint@v26
         with:
