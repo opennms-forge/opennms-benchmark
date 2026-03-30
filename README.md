@@ -323,9 +323,17 @@ ssh labuser@192.0.2.199 "sudo ip r a 10.42.0.0/16 via 192.0.2.134"
 
 ### Applications
 
-You have now access to the following applications and you can prepare and run experiments.
+All applications are served by Traefik on the monitoring VM's public IP over HTTPS.
+Replace `<monitoring-public-ip>` with the actual public IP assigned to the monitoring VM.
 
-* Grafana with login admin/admin: http://192.0.2.200:3000
-* OpenNMS Web UI login admin/admin: http://192.0.2.197:8980
-* Jaeger no login required: http://192.0.2.200:16686
-* Kafka UI no login required: http://192.0.2.198:8080
+> [!NOTE]
+> Traefik uses a self-signed certificate. Your browser will show a certificate warning — accept it to proceed.
+
+| Application | URL                                          | Credentials        |
+|:------------|:---------------------------------------------|:-------------------|
+| OpenNMS UI  | `https://<monitoring-public-ip>/opennms`     | admin / admin      |
+| Grafana     | `https://<monitoring-public-ip>/grafana`     | admin / admin      |
+| Prometheus  | `https://<monitoring-public-ip>/prometheus`  | no login required  |
+| Jaeger      | `https://<monitoring-public-ip>/jaeger`      | no login required  |
+| Kafka UI    | `https://<monitoring-public-ip>/kafka`       | no login required  |
+| pgAdmin     | `https://<monitoring-public-ip>/pgadmin`     | see bootstrap vars |
