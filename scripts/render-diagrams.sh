@@ -35,10 +35,8 @@ export subnet_sim   ; subnet_sim=$(   _extract subnet_sim)
 # --- render for each provider -----------------------------------------------
 VARS='${subnet_mgmt}${subnet_db}${subnet_kafka}${subnet_sim}'
 
-for provider in azure kvm proxmox; do
-  outdir="$REPO_ROOT/assets/$provider"
-  mkdir -p "$outdir"
-  envsubst "$VARS" < "$TPLS/ck1m.svg.tftpl"    > "$outdir/ck1m.svg"
-  envsubst "$VARS" < "$TPLS/ck1m.drawio.tftpl" > "$outdir/ck1m.drawio"
-  echo "rendered assets/$provider/ck1m.{svg,drawio}"
-done
+outdir="$REPO_ROOT/assets"
+mkdir -p "$outdir"
+envsubst "$VARS" < "$TPLS/ck1m.svg.tftpl"    > "$outdir/ck1m.svg"
+envsubst "$VARS" < "$TPLS/ck1m.drawio.tftpl" > "$outdir/ck1m.drawio"
+echo "rendered assets/ck1m.{svg,drawio}"
