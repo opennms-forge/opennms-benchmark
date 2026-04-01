@@ -1,4 +1,3 @@
 ---
 opennms_elastic_flows:
   elasticUrl: http://192.0.2.6:9200
-  globalElasticUser: elastic
