@@ -9,8 +9,8 @@
 set -euo pipefail
 
 OPENSIM_URL="${OPENSIM_URL:-https://bench-lab/opensim}"
-OPENNMS_HOST="${OPENNMS_HOST:-192.0.2.197}"
-OPENNMS_PORT="${OPENNMS_PORT:-8980}"
+OPENNMS_HOST="${OPENNMS_HOST:-bench-lab}"
+OPENNMS_PORT="${OPENNMS_PORT:-443}"
 OPENNMS_USER="${OPENNMS_USER:-admin}"
 OPENNMS_PASS="${OPENNMS_PASS:-admin}"
 FOREIGN_SOURCE="${FOREIGN_SOURCE:-opensim-inventory}"
@@ -27,28 +27,36 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# ── fetch devices ─────────────────────────────────────────────────────────────
+# ── fetch devices + generate requisition XML ──────────────────────────────────
+# Python handles both the HTTP fetch (urllib) and XML generation to avoid
+# any shell-level HTTP client interception.
 
-devices_json=$(curl -sk "${OPENSIM_URL}/api/v1/devices")
-
-if [[ $(echo "$devices_json" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['success'])") != "True" ]]; then
-  echo "Error: l8opensim API returned an error" >&2
-  echo "$devices_json" >&2
-  exit 1
-fi
-
-# ── generate requisition XML ──────────────────────────────────────────────────
-
-requisition=$(echo "$devices_json" | python3 - <<PYEOF
-import sys, json
+requisition=$(python3 - <<PYEOF
+import json, ssl, sys
+import urllib.request
 from datetime import datetime, timezone
 
-data = json.load(sys.stdin)
-devices = data["data"]
-
-ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+url          = "${OPENSIM_URL}/api/v1/devices"
 foreign_source = "${FOREIGN_SOURCE}"
-location = "${MINION_LOCATION}"
+location     = "${MINION_LOCATION}"
+
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+try:
+    with urllib.request.urlopen(url, context=ctx) as resp:
+        data = json.load(resp)
+except Exception as e:
+    print(f"Error fetching {url}: {e}", file=sys.stderr)
+    sys.exit(1)
+
+if not data.get("success"):
+    print(f"API error: {data.get('message', 'unknown')}", file=sys.stderr)
+    sys.exit(1)
+
+devices = data["data"]
+ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 lines = []
 lines.append('<?xml version="1.0" encoding="UTF-8"?>')
@@ -87,8 +95,8 @@ if $DRY_RUN; then
   exit 0
 fi
 
-opennms_base="http://${OPENNMS_HOST}:${OPENNMS_PORT}/opennms"
-curl_opts=(-s -u "${OPENNMS_USER}:${OPENNMS_PASS}" -H "Content-Type: application/xml" -H "Accept: application/xml")
+opennms_base="https://${OPENNMS_HOST}:${OPENNMS_PORT}/opennms"
+curl_opts=(-sk -u "${OPENNMS_USER}:${OPENNMS_PASS}" -H "Content-Type: application/xml" -H "Accept: application/xml")
 
 echo -n "Uploading requisition ... "
 curl "${curl_opts[@]}" -X POST -d "$requisition" \
