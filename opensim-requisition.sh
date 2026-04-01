@@ -19,11 +19,40 @@ MINION_LOCATION="${MINION_LOCATION:-lab-location-01}"
 IMPORT=false
 DRY_RUN=false
 
+usage() {
+  cat <<EOF
+Usage: $0 [OPTIONS]
+
+Generate an OpenNMS requisition XML from l8opensim simulated devices.
+
+Options:
+  --import      Upload the requisition to OpenNMS and trigger an import
+  --dry-run     With --import: print the XML without uploading
+  -h|--help     Show this message
+
+Environment variables (all optional):
+  OPENSIM_URL       l8opensim base URL       (default: https://bench-lab/opensim)
+  OPENNMS_HOST      OpenNMS host             (default: bench-lab)
+  OPENNMS_PORT      OpenNMS port             (default: 443)
+  OPENNMS_USER      OpenNMS username         (default: admin)
+  OPENNMS_PASS      OpenNMS password         (default: admin)
+  FOREIGN_SOURCE    Requisition foreign-source name (default: opensim-inventory)
+  MINION_LOCATION   Minion location label    (default: lab-location-01)
+
+Examples:
+  $0                          # print requisition XML to stdout
+  $0 --import                 # upload and trigger import in OpenNMS
+  $0 --import --dry-run       # preview XML without importing
+  MINION_LOCATION=site-a $0 --import
+EOF
+}
+
 while [[ $# -gt 0 ]]; do
   case $1 in
     --import)   IMPORT=true; shift ;;
     --dry-run)  DRY_RUN=true; shift ;;
-    *) echo "Error: unknown option: $1" >&2; exit 1 ;;
+    -h|--help)  usage; exit 0 ;;
+    *) echo "Error: unknown option: $1" >&2; usage >&2; exit 1 ;;
   esac
 done
 
