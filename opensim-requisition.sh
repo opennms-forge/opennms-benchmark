@@ -40,12 +40,13 @@ Environment variables (all optional):
   MINION_LOCATION   Minion location label    (default: lab-location-01)
 
 Examples:
-  $0                          # print requisition XML to stdout
   $0 --import                 # upload and trigger import in OpenNMS
   $0 --import --dry-run       # preview XML without importing
   MINION_LOCATION=site-a $0 --import
 EOF
 }
+
+if [[ $# -eq 0 ]]; then usage; exit 0; fi
 
 while [[ $# -gt 0 ]]; do
   case $1 in
