@@ -3,9 +3,6 @@ opennms_distribution: Horizon
 opennms_version: "35.0.4"
 opennms_pkg_version: "{{ opennms_version }}*"
 
-opennms_es_host: 192.0.2.202
-opennms_es_port: 9200
-
 opennms_datasource_db_host: 192.0.2.196
 opennms_datasource_db_port: 5432
 opennms_datasource_db_name: onms_benchmark
@@ -13,6 +10,10 @@ opennms_datasource_db_user: opennms
 opennms_datasource_db_password: p4a55word!
 
 onns_hzn_base_url: http://192.0.2.197:8980
+
+# Elasticsearch datasource
+opennms_es_host: "192.0.2.202"
+opennms_es_port: 9200
 
 grafana_datasources:
   - name: OpenNMS Performance
