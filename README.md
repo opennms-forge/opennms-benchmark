@@ -306,14 +306,16 @@ Replace `<monitoring-public-ip>` with the actual public IP assigned to the monit
 > [!NOTE]
 > Traefik uses a self-signed certificate. Your browser will show a certificate warning — accept it to proceed.
 
-| Application | URL                                          | Credentials        |
-|:------------|:---------------------------------------------|:-------------------|
-| OpenNMS UI  | `https://<monitoring-public-ip>/opennms`     | admin / admin      |
-| Grafana     | `https://<monitoring-public-ip>/grafana`     | admin / admin      |
-| Prometheus  | `https://<monitoring-public-ip>/prometheus`  | no login required  |
-| Jaeger      | `https://<monitoring-public-ip>/jaeger`      | no login required  |
-| Kafka UI    | `https://<monitoring-public-ip>/kafka`       | no login required  |
-| pgAdmin     | `https://<monitoring-public-ip>/pgadmin`     | see bootstrap vars |
+| Application | URL                                         | Credentials                 |
+|:------------|:--------------------------------------------|:----------------------------|
+| OpenNMS UI    | `https://<monitoring-public-ip>/opennms`    | admin / admin               |
+| Grafana       | `https://<monitoring-public-ip>/grafana`    | admin / admin               |
+| Prometheus    | `https://<monitoring-public-ip>/prometheus` | no login required           |
+| Jaeger        | `https://<monitoring-public-ip>/jaeger`     | no login required           |
+| Kafka UI      | `https://<monitoring-public-ip>/kafka`      | no login required           |
+| pgAdmin       | `https://<monitoring-public-ip>/pgadmin`    | admin@benchmark.lab / admin |
+| Kibana        | `https://<monitoring-public-ip>/kibana`     | no login required           |
+| SNMP Sim (l8opensim) | `https://<monitoring-public-ip>/opensim` | no login required      |
 
 > [!TIP]
 > To reach every VM on the management network (`192.0.2.192/26`) without a bastion host, install [Tailscale](https://tailscale.com) on the monitoring VM and advertise the subnet:
