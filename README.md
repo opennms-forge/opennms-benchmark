@@ -199,22 +199,10 @@ Edit `kvm.tfvars` and set `libvirt_uri`:
 **4. Deploy**
 
 ```bash
-cd terraform/kvm
-terraform init
-terraform apply -var-file=../lab.tfvars -var-file=kvm.tfvars
+./deploy.sh --provider kvm
 ```
 
-**5. Get VM IP addresses**
-
-VMs on `lab-mgmt` have static IPs from `lab.tfvars`. The monitoring VM gets a DHCP address on the external bridge — query it after boot via `qemu-guest-agent`:
-
-```bash
-LIBVIRT_URI="qemu+ssh://user@your-kvm-host/system"
-for vm in database core kafka minion netsim mon; do
-  echo -n "$vm: "
-  virsh -c $LIBVIRT_URI domifaddr $vm --source agent 2>/dev/null || echo "no lease yet"
-done
-```
+The script runs `terraform init` and `terraform apply`, then automatically discovers the monitoring VM's external DHCP address (via SSH through the hypervisor) and re-applies to regenerate the Ansible inventory with the correct `jump_host`. It then bootstraps the VMs and deploys the full OpenNMS stack.
 
 ---
 
