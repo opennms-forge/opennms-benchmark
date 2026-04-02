@@ -128,7 +128,7 @@ fi
 opennms_base="https://${OPENNMS_HOST}:${OPENNMS_PORT}/opennms"
 curl_opts=(-sk -u "${OPENNMS_USER}:${OPENNMS_PASS}" -H "Content-Type: application/xml" -H "Accept: application/xml")
 
-echo -n "Uploading requisition ... "
+echo -n "Uploading requisition  ... "
 curl "${curl_opts[@]}" -X POST -d "$requisition" \
   "${opennms_base}/rest/requisitions"
 echo "done"
