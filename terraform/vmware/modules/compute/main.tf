@@ -21,7 +21,7 @@ terraform {
 # cloud-init installed.
 
 module "cloud_init_elasticsearch" {
-  source         = "../../../../modules/cloud-init"
+  source         = "../../../modules/cloud-init"
   vm_name        = "es-benchmark-01"
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
@@ -33,7 +33,7 @@ module "cloud_init_elasticsearch" {
 }
 
 module "cloud_init_database" {
-  source         = "../../../../modules/cloud-init"
+  source         = "../../../modules/cloud-init"
   vm_name        = "db-benchmark-01"
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
@@ -45,7 +45,7 @@ module "cloud_init_database" {
 }
 
 module "cloud_init_core" {
-  source         = "../../../../modules/cloud-init"
+  source         = "../../../modules/cloud-init"
   vm_name        = "core-benchmark-01"
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
@@ -58,7 +58,7 @@ module "cloud_init_core" {
 }
 
 module "cloud_init_kafka" {
-  source         = "../../../../modules/cloud-init"
+  source         = "../../../modules/cloud-init"
   vm_name        = "kafka-benchmark-01"
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
@@ -70,7 +70,7 @@ module "cloud_init_kafka" {
 }
 
 module "cloud_init_minion" {
-  source         = "../../../../modules/cloud-init"
+  source         = "../../../modules/cloud-init"
   vm_name        = "minion-benchmark-01"
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
@@ -83,7 +83,7 @@ module "cloud_init_minion" {
 }
 
 module "cloud_init_netsim" {
-  source         = "../../../../modules/cloud-init"
+  source         = "../../../modules/cloud-init"
   vm_name        = "netsim-benchmark-01"
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
@@ -95,7 +95,7 @@ module "cloud_init_netsim" {
 }
 
 module "cloud_init_monitoring" {
-  source         = "../../../../modules/cloud-init"
+  source         = "../../../modules/cloud-init"
   vm_name        = "mon-benchmark-01"
   admin_user     = var.admin_user
   ssh_public_key = var.ssh_public_key
