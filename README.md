@@ -92,7 +92,7 @@ git submodule update
 
 ## 🚀 Lab Deployment
 
-The lab is deployed using Terraform. Three providers are supported: **Azure**, **KVM/libvirt**, and **Proxmox VE**.
+The lab is deployed using Terraform. Four providers are supported: **Azure**, **KVM/libvirt**, **Proxmox VE**, and **VMware vSphere**.
 
 All providers share a common `terraform/lab.tfvars` for network layout, IP addresses, and VM names. Each provider adds its own `<provider>.tfvars` for host-specific settings.
 
@@ -264,6 +264,80 @@ ssh_key_path         = "~/.ssh/id_rsa"
 ```
 
 The script runs `terraform init` and `terraform apply`, then automatically discovers the monitoring VM's external DHCP address on `vmbr4` (via SSH through the Proxmox host) and re-applies to regenerate the Ansible inventory with the correct `jump_host`. It then bootstraps the VMs and deploys the full OpenNMS stack.
+
+---
+
+### VMware vSphere
+
+**Requirements:** vCenter Server, account with VM create/clone permissions, Terraform ≥ 1.5, [`govc`](https://github.com/vmware/govmomi/tree/main/govc) (optional, for OVA import)
+
+See [`terraform/vmware/README.md`](terraform/vmware/README.md) for full documentation including cloud-init delivery via guestinfo and network interface naming.
+
+**1. Create port groups** on a vSwitch or dvSwitch in the vSphere UI:
+
+| Variable | Purpose | Subnet |
+|:---------|:--------|:-------|
+| `pg_mgmt` | Management — static IPs, operator SSH | `192.0.2.192/26` |
+| `pg_db` | Database traffic between Core and PostgreSQL | `192.0.2.0/26` |
+| `pg_kafka` | Kafka coordination (Core, Kafka, Minion) | `192.0.2.64/26` |
+| `pg_sim` | SNMP simulation network (Minion ↔ NetSim) | `192.0.2.128/26` |
+| `pg_ext` | External DHCP — monitoring VM gets a routable IP here | _(DHCP)_ |
+
+Internal port groups (`pg_db`, `pg_kafka`, `pg_sim`) carry only lab traffic and do not require uplinks. `pg_mgmt` and `pg_ext` need uplinks for operator SSH access.
+
+**2. Build a template VM** (one-time setup)
+
+```bash
+# Import Ubuntu 24.04 cloud image OVA
+govc import.ova noble-server-cloudimg-amd64.ova
+
+# Boot the VM and install required packages
+apt install -y open-vm-tools cloud-init
+
+# Generalize — clear cloud-init state before converting to template
+cloud-init clean --logs
+sudo shutdown -h now
+```
+
+In the vSphere UI, right-click the VM → **Convert to Template**. The template name must match `template_name` in `vmware.tfvars`.
+
+**3. Configure**
+
+```bash
+cp terraform/vmware/vmware.tfvars.example terraform/vmware/vmware.tfvars
+```
+
+Edit `vmware.tfvars` with your values:
+
+```hcl
+vsphere_server   = "vcenter.example.com"
+vsphere_user     = "administrator@vsphere.local"
+vsphere_password = ""                            # or set TF_VAR_vsphere_password
+vsphere_insecure = false                         # set true for self-signed certificates
+datacenter       = "dc1"
+cluster          = "cluster1"
+datastore        = "datastore1"
+template_name    = "ubuntu-2404-cloud-init"
+ssh_key_path     = "~/.ssh/id_rsa"
+pg_mgmt          = "PG-LAB-MGMT"
+pg_db            = "PG-LAB-DB"
+pg_kafka         = "PG-LAB-KAFKA"
+pg_sim           = "PG-LAB-SIM"
+pg_ext           = "PG-LAB-EXT"
+```
+
+`vmware.tfvars` is gitignored — your credentials are never committed.
+
+**4. Deploy**
+
+```bash
+./deploy.sh --provider vmware
+
+# With a self-signed vCenter certificate:
+./deploy.sh --provider vmware --tf-args "-var vsphere_insecure=true"
+```
+
+The script runs `terraform init` and `terraform apply`, then automatically discovers the monitoring VM's external DHCP address on `pg_ext` and re-applies to regenerate the Ansible inventory with the correct `jump_host`. It then bootstraps the VMs and deploys the full OpenNMS stack.
 
 ---
 

@@ -79,6 +79,26 @@ jobs:
         run: terraform validate
         working-directory: terraform/proxmox
 
+  validate-vmware:
+    name: Validate (VMware)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "~1.5"
+
+      - name: terraform init
+        # hashicorp/vsphere is a HashiCorp-maintained provider and installs without a running host
+        run: terraform init -backend=false
+        working-directory: terraform/vmware
+
+      - name: terraform validate
+        # validate checks syntax and type correctness only — no provider API calls
+        run: terraform validate
+        working-directory: terraform/vmware
+
   tflint:
     name: TFLint
     runs-on: ubuntu-latest
@@ -118,3 +138,13 @@ jobs:
       - name: TFLint (Proxmox)
         run: tflint --recursive --minimum-failure-severity=error
         working-directory: terraform/proxmox
+
+      - name: Init TFLint (VMware)
+        run: tflint --init
+        working-directory: terraform/vmware
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: TFLint (VMware)
+        run: tflint --recursive --minimum-failure-severity=error
+        working-directory: terraform/vmware
