@@ -14,6 +14,8 @@ grafana_ini:
     type: sqlite3
   auth: {}
 
-# Dashboards are provisioned by bootstrap/roles/monitoring, not this collection.
-# Point to a non-existent path so the collection skips its custom dashboard import block.
+# Dashboards are provisioned by bootstrap/roles/grafana, not this collection.
+# Disable provisioning-file mode so the collection does not write ansible.yml into
+# /etc/grafana/provisioning/dashboards/ alongside our own opennms-core.yml provider.
+grafana_use_provisioning: false
 grafana_dashboards_dir: "/nonexistent/grafana-dashboards"
