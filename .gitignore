@@ -66,6 +66,7 @@ terraform.rc
 .claude/
 _bmad/
 _bmad-output/
+openspec/
 
 # === Ansible specific ===
 
