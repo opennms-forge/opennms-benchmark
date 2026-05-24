@@ -115,6 +115,7 @@ discover_jump_host() {
   for i in $(seq 1 24); do
     jump_host=$(ssh \
       -o StrictHostKeyChecking=no \
+      -o UserKnownHostsFile=/dev/null \
       -o BatchMode=yes \
       -o ConnectTimeout=5 \
       -o ProxyJump="$hypervisor" \
