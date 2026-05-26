@@ -88,14 +88,18 @@ bootstrap/
     └── reboot/               # Reboots and waits for SSH to return
 ```
 
-## ansible-opennms/
+## opennms-playbook.yml + requirements.yml
 
-Git submodule (`opennms-forge/ansible-opennms`). Contains Ansible roles for deploying OpenNMS Core, Minion, Kafka broker, and PostgreSQL. You do not modify files here directly — override variables through `opennms-lab-vars.yml`.
+The OpenNMS stack deployment lives at the repo root as a top-level playbook plus a Galaxy collection pin:
 
 ```text
-ansible-opennms/              # git submodule (opennms-forge/ansible-opennms)
-└── opennms-playbook.yml      # Entry point: deploys the full OpenNMS stack
+opennms-playbook.yml          # Entry point: invokes indigo423.opennms.* roles
+requirements.yml              # Galaxy collection pins:
+                              #   - indigo423.opennms (git SHA, source: opennms-forge/ansible-opennms)
+                              #   - community.postgresql, community.general, grafana.grafana (version-pinned)
 ```
+
+The role code is consumed via `ansible-galaxy collection install -r requirements.yml --pre` (the `--pre` flag is required while `grafana.grafana 6.x` is published as a Galaxy pre-release). Roles are not modified locally — open PRs against the source repo and bump the SHA to consume changes.
 
 ## experiments/
 

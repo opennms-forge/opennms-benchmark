@@ -46,7 +46,6 @@ date: 2026-03-20
 # 1. Clone
 git clone https://github.com/opennms-forge/opennms-benchmark.git
 cd opennms-benchmark
-git submodule init && git submodule update
 
 # 2. Provision
 export TF_VAR_ssh_public_key=$(cat ~/.ssh/id_rsa.pub)
@@ -57,13 +56,15 @@ terraform apply -var-file=../lab.tfvars -var-file=azure.tfvars
 cd ../../bootstrap && ansible-playbook -i inventory site.yml
 
 # 4. Deploy OpenNMS stack
-cd ../ansible-opennms
+cd ..
+# --pre is required while grafana.grafana 6.x is a Galaxy pre-release.
+ansible-galaxy collection install -r requirements.yml --pre --force-with-deps
 ansible-playbook --user labuser --become \
-  -i ../ansible-inventory.yml opennms-playbook.yml \
-  --extra-vars="@../opennms-lab-vars.yml"
+  -i ansible-inventory.yml opennms-playbook.yml \
+  --extra-vars="@opennms-lab-vars.yml"
 
 # 5. Run an experiment
-cd ../experiments/c1km1_4c16g_kfk_pm_snmp
+cd experiments/c1km1_4c16g_kfk_pm_snmp
 ansible-playbook -i opennms-lab-inventory.yml experiment.yml \
   --extra-vars="@../../opennms-lab-vars.yml"
 ```

@@ -120,13 +120,11 @@ The netsim VM's nl6 simulator emits three baseline event streams to the Minion's
 
 ## 🕹️ Usage
 
-### Clone the repository with submodules
+### Clone the repository
 
 ```bash
 git clone https://github.com/opennms-forge/opennms-benchmark.git
 cd opennms-benchmark
-git submodule init
-git submodule update
 ```
 
 ## 🚀 Lab Deployment
@@ -392,17 +390,17 @@ ansible-playbook -i inventory site.yml
 
 ### Deploy the OpenNMS Stack
 
-OpenNMS Core, Minion and Kafka will be installed using our existing [Ansible OpenNMS](https://github.com/opennms-forge/ansible-opennms) roles.
+OpenNMS Core, Minion and Kafka are installed using the `indigo423.opennms` Ansible Galaxy collection, sourced from [opennms-forge/ansible-opennms](https://github.com/opennms-forge/ansible-opennms) and pinned by git SHA in `requirements.yml` at the repo root.
 
-> [!NOTE]
-> The Ansible playbook for OpenNMS is linked as submodule in this repository so you don't have to deal with a dedicated repository.
-
-Deploy a generic OpenNMS application stack
+Install the collections, then run the deployment playbook:
 
 ```bash
-cd ansible-opennms
-ansible-playbook --user labuser --become -i ../ansible-inventory.yml opennms-playbook.yml --extra-vars="@../opennms-lab-vars.yml"
+# --pre is required while grafana.grafana 6.x is a Galaxy pre-release.
+ansible-galaxy collection install -r requirements.yml --pre --force-with-deps
+
+ansible-playbook --user labuser --become -i ansible-inventory.yml opennms-playbook.yml --extra-vars="@opennms-lab-vars.yml"
 ```
+
 > [!IMPORTANT]
 > The Prometheus JMX exporter requires right now to restart Core manually, see [issue#57](https://github.com/opennms-forge/ansible-opennms/issues/57).
 

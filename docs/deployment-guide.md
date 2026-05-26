@@ -74,11 +74,13 @@ This installs: base packages, Docker Engine, Prometheus Node Exporter, Grafana, 
 ### 6. Deploy the OpenNMS stack
 
 ```bash
-cd ansible-opennms
+# --pre is required while grafana.grafana 6.x is a Galaxy pre-release.
+ansible-galaxy collection install -r requirements.yml --pre --force-with-deps
+
 ansible-playbook --user labuser --become \
-  -i ../ansible-inventory.yml \
+  -i ansible-inventory.yml \
   opennms-playbook.yml \
-  --extra-vars="@../opennms-lab-vars.yml"
+  --extra-vars="@opennms-lab-vars.yml"
 ```
 
 > **Important:** After deployment, restart OpenNMS Core manually on the core VM to activate the JMX Prometheus exporter:
