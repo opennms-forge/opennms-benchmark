@@ -1,3 +1,0 @@
-[submodule "ansible-opennms"]
-	path = ansible-opennms
-	url = https://github.com/opennms-forge/ansible-opennms
