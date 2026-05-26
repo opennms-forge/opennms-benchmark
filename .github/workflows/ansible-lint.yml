@@ -6,6 +6,8 @@ on:
     paths:
       - "bootstrap/**"
       - "experiments/**"
+      - "opennms-playbook.yml"
+      - "requirements.yml"
       - ".ansible-lint"
 
 jobs:
@@ -14,14 +16,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
 
-      - name: Install collections
+      - name: Cache Ansible collections
+        uses: actions/cache@v4
+        with:
+          path: ~/.ansible/collections
+          key: ansible-collections-${{ hashFiles('requirements.yml', 'bootstrap/requirements.yml') }}
+
+      - name: Install bootstrap collections
         run: ansible-galaxy collection install -r bootstrap/requirements.yml -p ~/.ansible/collections --force-with-deps
 
+      - name: Install OpenNMS deployment collections
+        # --pre required because grafana.grafana 6.x is a Galaxy pre-release.
+        run: ansible-galaxy collection install -r requirements.yml -p ~/.ansible/collections --pre --force-with-deps
+
       - name: Set Ansible roles path
-        run: echo "ANSIBLE_ROLES_PATH=$GITHUB_WORKSPACE/bootstrap/roles:$GITHUB_WORKSPACE/ansible-opennms/roles" >> "$GITHUB_ENV"
+        run: echo "ANSIBLE_ROLES_PATH=$GITHUB_WORKSPACE/bootstrap/roles" >> "$GITHUB_ENV"
 
       - name: Run ansible-lint
         uses: ansible/ansible-lint@v26
