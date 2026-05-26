@@ -1,0 +1,28 @@
+---
+# Ansible Galaxy collections required to deploy the OpenNMS Horizon stack.
+# Install with: ansible-galaxy collection install -r requirements.yml --pre
+#
+# --pre is required because grafana.grafana 6.x is published to Galaxy as a
+# pre-release. Drop the flag once the pin moves to a stable release.
+
+collections:
+  # OpenNMS Horizon deployment roles.
+  # Source: github.com/opennms-forge/ansible-opennms (published under Galaxy
+  # namespace indigo423). Pinned by git SHA for benchmark reproducibility;
+  # update only via a deliberate PR, never automatically.
+  - name: https://github.com/opennms-forge/ansible-opennms.git
+    type: git
+    # TODO(galaxy-collection-migration): replace with the merge-commit SHA of
+    # the upstream PR that adds galaxy.yml. See openspec change
+    # `replace-ansible-submodule-with-galaxy-collection`, task 0.3.
+    version: REPLACE_ME_AFTER_UPSTREAM_PR_MERGES
+
+  # Transitive collections used by the OpenNMS deployment roles. Pinned by
+  # Galaxy version string (weaker than SHA pinning, matches the prior
+  # submodule's regime).
+  - name: community.postgresql
+    version: "4.2.0"
+  - name: community.general
+    version: "12.6.0"
+  - name: grafana.grafana
+    version: "6.1.1-hotfix.1"  # pre-release; requires --pre on install
