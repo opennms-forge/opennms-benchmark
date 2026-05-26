@@ -2,9 +2,10 @@
 # deploy.sh — provision lab infrastructure and deploy OpenNMS Horizon
 #
 # Workflow:
-#   1. terraform apply  — creates VMs and writes ansible-inventory.yml
-#   2. ansible-playbook bootstrap/site.yml  — installs base tooling
-#   3. ansible-playbook ansible-opennms/site.yml  — deploys OpenNMS stack
+#   1. terraform apply             — creates VMs and writes ansible-inventory.yml
+#   2. ansible-playbook bootstrap  — installs base tooling
+#   3. ansible-galaxy collection install — pulls indigo423.opennms and friends
+#   4. ansible-playbook opennms    — deploys OpenNMS stack
 #
 # For KVM and Proxmox the monitoring VM gets a DHCP address on an external
 # bridge.  The script SSH-probes that address after the first apply, then
@@ -209,7 +210,7 @@ if [[ "$PROVIDER" == "kvm" || "$PROVIDER" == "proxmox" || "$PROVIDER" == "vmware
   fi
 fi
 
-step "[2/3] Bootstrapping VMs..."
+step "[2/4] Bootstrapping VMs..."
 # shellcheck disable=SC2086
 ansible-playbook \
   --become \
@@ -217,11 +218,18 @@ ansible-playbook \
   $ANSIBLE_VERBOSITY \
   "$REPO_ROOT/bootstrap/site.yml"
 
-step "[3/3] Deploying OpenNMS Horizon..."
+step "[3/4] Installing Ansible Galaxy collections..."
+# --pre required because grafana.grafana 6.x is published as a pre-release.
+ansible-galaxy collection install \
+  -r "$REPO_ROOT/requirements.yml" \
+  --pre \
+  --force-with-deps
+
+step "[4/4] Deploying OpenNMS Horizon..."
 # shellcheck disable=SC2086
 ansible-playbook \
   --become \
   -i "$REPO_ROOT/ansible-inventory.yml" \
   $ANSIBLE_VERBOSITY \
-  "$REPO_ROOT/ansible-opennms/site.yml" \
+  "$REPO_ROOT/opennms-playbook.yml" \
   --extra-vars="@$REPO_ROOT/opennms-lab-vars.yml"
