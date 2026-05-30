@@ -57,8 +57,7 @@ cd ../../bootstrap && ansible-playbook -i inventory site.yml
 
 # 4. Deploy OpenNMS stack
 cd ..
-# --pre is required while grafana.grafana 6.x is a Galaxy pre-release.
-ansible-galaxy collection install -r requirements.yml --pre --force-with-deps
+ansible-galaxy collection install -r requirements.yml --force-with-deps
 ansible-playbook --user labuser --become \
   -i ansible-inventory.yml opennms-playbook.yml \
   --extra-vars="@opennms-lab-vars.yml"

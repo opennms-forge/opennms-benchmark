@@ -99,7 +99,7 @@ requirements.yml              # Galaxy collection pins:
                               #   - community.postgresql, community.general, grafana.grafana (version-pinned)
 ```
 
-The role code is consumed via `ansible-galaxy collection install -r requirements.yml --pre` (the `--pre` flag is required while `grafana.grafana 6.x` is published as a Galaxy pre-release). Roles are not modified locally — open PRs against the source repo and bump the SHA to consume changes.
+The role code is consumed via `ansible-galaxy collection install -r requirements.yml`. Roles are not modified locally — open PRs against the source repo and bump the SHA to consume changes.
 
 ## experiments/
 

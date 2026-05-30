@@ -219,10 +219,8 @@ ansible-playbook \
   "$REPO_ROOT/bootstrap/site.yml"
 
 step "[3/4] Installing Ansible Galaxy collections..."
-# --pre required because grafana.grafana 6.x is published as a pre-release.
 ansible-galaxy collection install \
   -r "$REPO_ROOT/requirements.yml" \
-  --pre \
   --force-with-deps
 
 step "[4/4] Deploying OpenNMS Horizon..."

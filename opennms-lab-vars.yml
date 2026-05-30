@@ -20,7 +20,10 @@ onns_hzn_base_url: http://192.0.2.197:8980
 opennms_es_host: "192.0.2.202"
 opennms_es_port: 9200
 
-grafana_version: "latest"
+# Pinned to a Grafana 12.x release so the stock grafana.grafana 6.1.0 collection
+# works as-is. Grafana 13 needs a grafana-cli --homepath fix for plugin installs
+# that only exists in a non-Galaxy hotfix build (see requirements.yml).
+grafana_version: "12.4.3+security-02"
 # Datasources are provisioned by bootstrap/roles/grafana via files.
 # Empty list overrides the submodule's group_vars (which the collection
 # would otherwise use to call its datasource module — rejecting plugin types).

@@ -44,8 +44,7 @@ ansible-playbook -i inventory site.yml
 
 ### Deploy the OpenNMS stack
 ```bash
-# --pre is required while grafana.grafana 6.x is a Galaxy pre-release.
-ansible-galaxy collection install -r requirements.yml --pre --force-with-deps
+ansible-galaxy collection install -r requirements.yml --force-with-deps
 
 ansible-playbook --user labuser --become \
   -i ansible-inventory.yml \
@@ -84,8 +83,7 @@ ansible-playbook -i ../ansible-inventory.yml reboot-playbook.yml
 The OpenNMS deployment automation is consumed as the `indigo423.opennms` Ansible Galaxy collection (sourced from `github.com/opennms-forge/ansible-opennms`), alongside `community.postgresql`, `community.general`, and `grafana.grafana`. Pins live in `requirements.yml` at the repo root — `indigo423.opennms` is pinned by git SHA for benchmark reproducibility; the others are pinned by Galaxy version string. SHA bumps are deliberate, manual PRs.
 
 ```bash
-# --pre is required while grafana.grafana 6.x is a Galaxy pre-release.
-ansible-galaxy collection install -r requirements.yml --pre --force-with-deps
+ansible-galaxy collection install -r requirements.yml --force-with-deps
 ```
 
 When iterating on a role locally without an upstream PR cycle, override the `indigo423.opennms` entry with a `type: dir` pointing at your local checkout — see `docs/development-guide.md`.

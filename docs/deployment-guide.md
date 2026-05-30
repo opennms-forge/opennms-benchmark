@@ -74,8 +74,7 @@ This installs: base packages, Docker Engine, Prometheus Node Exporter, Grafana, 
 ### 6. Deploy the OpenNMS stack
 
 ```bash
-# --pre is required while grafana.grafana 6.x is a Galaxy pre-release.
-ansible-galaxy collection install -r requirements.yml --pre --force-with-deps
+ansible-galaxy collection install -r requirements.yml --force-with-deps
 
 ansible-playbook --user labuser --become \
   -i ansible-inventory.yml \

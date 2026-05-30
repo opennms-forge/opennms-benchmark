@@ -27,8 +27,7 @@ jobs:
         run: ansible-galaxy collection install -r bootstrap/requirements.yml -p ~/.ansible/collections --force-with-deps
 
       - name: Install OpenNMS deployment collections
-        # --pre required because grafana.grafana 6.x is a Galaxy pre-release.
-        run: ansible-galaxy collection install -r requirements.yml -p ~/.ansible/collections --pre --force-with-deps
+        run: ansible-galaxy collection install -r requirements.yml -p ~/.ansible/collections --force-with-deps
 
       - name: Set Ansible roles path
         run: echo "ANSIBLE_ROLES_PATH=$GITHUB_WORKSPACE/bootstrap/roles" >> "$GITHUB_ENV"

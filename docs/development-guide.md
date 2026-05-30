@@ -128,8 +128,7 @@ ansible-playbook -i ../ansible-inventory.yml reboot-playbook.yml
 ### Deploy the OpenNMS stack
 
 ```bash
-# --pre is required while grafana.grafana 6.x is a Galaxy pre-release.
-ansible-galaxy collection install -r requirements.yml --pre --force-with-deps
+ansible-galaxy collection install -r requirements.yml --force-with-deps
 
 ansible-playbook --user labuser --become \
   -i ansible-inventory.yml \
@@ -207,7 +206,7 @@ When upstream lands a change you want to consume in the lab:
 ```bash
 # 1. Replace the version in requirements.yml with the new SHA from upstream.
 # 2. Re-install and re-deploy:
-ansible-galaxy collection install -r requirements.yml --pre --force-with-deps
+ansible-galaxy collection install -r requirements.yml --force-with-deps
 ansible-playbook --user labuser --become \
   -i ansible-inventory.yml opennms-playbook.yml \
   --extra-vars="@opennms-lab-vars.yml"

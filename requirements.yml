@@ -1,9 +1,6 @@
 ---
 # Ansible Galaxy collections required to deploy the OpenNMS Horizon stack.
-# Install with: ansible-galaxy collection install -r requirements.yml --pre
-#
-# --pre is required because grafana.grafana is pinned to 6.1.1-hotfix.1
-# (a SemVer pre-release). Drop the flag once that pin moves to a stable release.
+# Install with: ansible-galaxy collection install -r requirements.yml
 
 collections:
   # OpenNMS Horizon deployment roles.
@@ -21,5 +18,8 @@ collections:
     version: "4.2.0"
   - name: community.general
     version: "12.6.0"
+  # Stock Galaxy release (6.1.0). Works with the Grafana 12.x pin in
+  # opennms-lab-vars.yml; the Grafana-13 grafana-cli plugin fix from the
+  # non-Galaxy 6.1.1-hotfix.1 build is not needed at that Grafana version.
   - name: grafana.grafana
-    version: "6.1.1-hotfix.1"  # pre-release; requires --pre on install
+    version: "6.1.0"
