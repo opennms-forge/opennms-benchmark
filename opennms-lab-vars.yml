@@ -10,7 +10,6 @@ opennms_datasource_db_host: 192.0.2.196
 opennms_datasource_db_port: 5432
 opennms_datasource_db_name: onms_benchmark
 opennms_datasource_db_user: opennms
-opennms_datasource_db_password: p4a55word!
 opennms_datasource_connection_pool_min_pool: 100
 opennms_datasource_connection_pool_max_pool: 100
 opennms_datasource_connection_pool_max_size: 100
@@ -21,7 +20,7 @@ onns_hzn_base_url: http://192.0.2.197:8980
 opennms_es_host: "192.0.2.202"
 opennms_es_port: 9200
 
-grafana_version: "13.0.1"
+grafana_version: "latest"
 # Datasources are provisioned by bootstrap/roles/grafana via files.
 # Empty list overrides the submodule's group_vars (which the collection
 # would otherwise use to call its datasource module — rejecting plugin types).
@@ -50,7 +49,6 @@ es_configuration:
 
 pg_version: 18
 postgres_user: postgres
-postgres_password: oth3rP455w0rd!
 postgres_listen_addresses: "*"
 postgres_hba_permissions_v4: "192.0.2.0/24"
 
@@ -104,4 +102,7 @@ kafka_server_properties:
 opennms_jvm_conf:
   JAVA_HEAP_SIZE: 8192
   JAVA_INITIAL_HEAP_SIZE: 8192
-  ADDITIONAL_MANAGER_OPTIONS: '"-XX:+UseG1GC -javaagent:/opt/prom-jmx-exporter/jmx_prometheus_javaagent.jar=9299:/opt/prom-jmx-exporter/config.yaml"'
+  # Raw value only — opennms.conf.j2 wraps each opennms_jvm_conf value in shell
+  # quotes itself. Pre-quoting here produced ADDITIONAL_MANAGER_OPTIONS=""..."",
+  # so `install -dis` passed the literal token "-XX:+UseG1GC to java as a class.
+  ADDITIONAL_MANAGER_OPTIONS: "-XX:+UseG1GC -javaagent:/opt/prom-jmx-exporter/jmx_prometheus_javaagent.jar=9299:/opt/prom-jmx-exporter/config.yaml"

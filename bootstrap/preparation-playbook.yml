@@ -80,9 +80,3 @@
   become: true
   roles:
     - kafka_ui
-
-- name: Elasticsearch
-  hosts: elasticsearch
-  become: true
-  roles:
-    - stub_elasticsearch

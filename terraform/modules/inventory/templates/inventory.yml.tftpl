@@ -61,3 +61,11 @@ all:
     kafka_ui:
       hosts:
         kafka-benchmark-01:
+    opennms_stack:
+      children:
+        database:
+        core:
+        message_broker:
+        elasticsearch:
+        minion:
+        grafana:
