@@ -22,3 +22,11 @@ grafana_dashboards_dir: "/nonexistent/grafana-dashboards"
 # Empty list prevents the collection's datasource module from running (it rejects
 # plugin datasource types like opennms-performance-datasource).
 grafana_datasources: []
+
+# Install the OpenNMS Helm app via the grafana.grafana role so the plugin is
+# present before that role restarts and waits on :3000. The grafana_provisioning
+# role drops the opennms-app.yml enable file afterward; without the plugin already
+# installed, a stale enable file makes Grafana 13 fatally fail provisioning at
+# startup (crash loop -> wait_for :3000 times out).
+grafana_plugins:
+  - opennms-opennms-app

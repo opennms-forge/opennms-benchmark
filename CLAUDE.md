@@ -44,11 +44,12 @@ ansible-playbook -i inventory site.yml
 
 ### Deploy the OpenNMS stack
 ```bash
-cd ansible-opennms
+ansible-galaxy collection install -r requirements.yml --force-with-deps
+
 ansible-playbook --user labuser --become \
-  -i ../ansible-inventory.yml \
+  -i ansible-inventory.yml \
   opennms-playbook.yml \
-  --extra-vars="@../opennms-lab-vars.yml"
+  --extra-vars="@opennms-lab-vars.yml"
 ```
 
 ### Run a specific experiment
@@ -77,12 +78,15 @@ ansible-playbook -i ../ansible-inventory.yml update-playbook.yml
 ansible-playbook -i ../ansible-inventory.yml reboot-playbook.yml
 ```
 
-## Submodule
+## Ansible Galaxy Collections
 
-`ansible-opennms/` is a git submodule from `https://github.com/opennms-forge/ansible-opennms`. After cloning, initialize it with:
+The OpenNMS deployment automation is consumed as the `indigo423.opennms` Ansible Galaxy collection (sourced from `github.com/opennms-forge/ansible-opennms`), alongside `community.postgresql`, `community.general`, and `grafana.grafana`. Pins live in `requirements.yml` at the repo root — `indigo423.opennms` is pinned by git SHA for benchmark reproducibility; the others are pinned by Galaxy version string. SHA bumps are deliberate, manual PRs.
+
 ```bash
-git submodule update --init --recursive
+ansible-galaxy collection install -r requirements.yml --force-with-deps
 ```
+
+When iterating on a role locally without an upstream PR cycle, override the `indigo423.opennms` entry with a `type: dir` pointing at your local checkout — see `docs/development-guide.md`.
 
 ## VM Naming Convention
 

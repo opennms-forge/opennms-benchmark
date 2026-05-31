@@ -8,7 +8,7 @@
 #
 set -euo pipefail
 
-OPENSIM_URL="${OPENSIM_URL:-https://bench-lab/opensim}"
+OPENSIM_URL="${OPENSIM_URL:-https://bench-lab/nl6}"
 OPENNMS_HOST="${OPENNMS_HOST:-bench-lab}"
 OPENNMS_PORT="${OPENNMS_PORT:-443}"
 OPENNMS_USER="${OPENNMS_USER:-admin}"

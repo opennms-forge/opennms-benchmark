@@ -1,0 +1,25 @@
+---
+# Ansible Galaxy collections required to deploy the OpenNMS Horizon stack.
+# Install with: ansible-galaxy collection install -r requirements.yml
+
+collections:
+  # OpenNMS Horizon deployment roles.
+  # Source: github.com/opennms-forge/ansible-opennms (published under Galaxy
+  # namespace indigo423). Pinned by git SHA for benchmark reproducibility;
+  # update only via a deliberate PR, never automatically.
+  - name: https://github.com/opennms-forge/ansible-opennms.git
+    type: git
+    version: d0d5b1732cab6c1e5ce5a48970f2ec86bc4b5fb7  # v0.4.6
+
+  # Transitive collections used by the OpenNMS deployment roles. Pinned by
+  # Galaxy version string (weaker than SHA pinning, matches the prior
+  # submodule's regime).
+  - name: community.postgresql
+    version: "4.2.0"
+  - name: community.general
+    version: "12.6.0"
+  # Stock Galaxy release (6.1.0). Works with the Grafana 12.x pin in
+  # opennms-lab-vars.yml; the Grafana-13 grafana-cli plugin fix from the
+  # non-Galaxy 6.1.1-hotfix.1 build is not needed at that Grafana version.
+  - name: grafana.grafana
+    version: "6.1.0"

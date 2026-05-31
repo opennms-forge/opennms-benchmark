@@ -19,7 +19,7 @@ A four-layer pipeline where each layer is independently runnable and re-runnable
 ```mermaid
 flowchart TD
     A[Layer 1: Provision\nTerraform or az CLI] --> B[Layer 2: Bootstrap\nAnsible — OS tooling\nmonitoring stack]
-    B --> C[Layer 3: Deploy OpenNMS Stack\nAnsible submodule\nPostgreSQL · Kafka · Core · Minion]
+    B --> C[Layer 3: Deploy OpenNMS Stack\nindigo423.opennms collection\nPostgreSQL · Kafka · Core · Minion]
     C --> D[Layer 4: Run Experiment\nAnsible per-scenario\nreconfigure + load nodes]
 ```
 
@@ -95,7 +95,7 @@ ip route add 10.42.0.0/16 via 192.0.2.134
 | VM OS | Ubuntu 24.04 LTS | cloud image | Cloud-init enabled |
 | OpenNMS | OpenNMS Horizon | 34.1.0 (default) | Configurable per experiment |
 | Message broker | Apache Kafka | KRaft mode | No ZooKeeper |
-| Database | PostgreSQL | 15+ | Configured via ansible-opennms submodule |
+| Database | PostgreSQL | 15+ | Configured via `indigo423.opennms` Galaxy collection |
 | Observability | Prometheus | latest | Scrapes node (9100) + Core JMX (9299) |
 | Dashboards | Grafana OSS | latest | Pre-provisioned dashboards + OpenNMS plugin |
 | Tracing | Jaeger | latest | All-in-one; traces OpenNMS internals |
@@ -127,7 +127,7 @@ This makes VMs immediately reachable by hostname within the lab and SSH-able by 
 
 ## OpenNMS Stack
 
-The `ansible-opennms/` submodule deploys and configures:
+The `indigo423.opennms` Ansible Galaxy collection (sourced from `github.com/opennms-forge/ansible-opennms`, pinned by git SHA in `requirements.yml`) deploys and configures:
 
 - **PostgreSQL** — primary datastore for OpenNMS events, alarms, and assets
 - **Apache Kafka (KRaft)** — message bus between Core and Minion (IPC strategy)
@@ -197,6 +197,6 @@ No apply or plan jobs run in CI — the lab is deployed manually.
 
 **Kafka KRaft mode.** No ZooKeeper dependency. Kafka acts as the IPC bus between Core and Minion for all experiment scenarios, even the RRD timeseries experiment (which only changes the timeseries backend, not the message transport).
 
-**Submodule for OpenNMS Ansible roles.** The `ansible-opennms/` submodule keeps OpenNMS deployment logic upstream and versioned separately from lab-specific configuration. Lab configuration is injected via `opennms-lab-vars.yml` overrides.
+**Galaxy collection for OpenNMS Ansible roles.** The `indigo423.opennms` collection (sourced from `github.com/opennms-forge/ansible-opennms`) keeps OpenNMS deployment logic upstream and versioned separately from lab-specific configuration. It is pinned by git SHA in `requirements.yml` for benchmark reproducibility. Lab configuration is injected via `opennms-lab-vars.yml` overrides.
 
 **Monitoring VM as jump host.** Only the monitoring VM has a public IP. All other VMs are accessible only through the management subnet. Tailscale is recommended for transparent access to the full 192.0.2.0/24 range from a local machine.

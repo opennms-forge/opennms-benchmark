@@ -60,7 +60,7 @@ terraform/vmware/vmware.tfvars
 terraform.rc
 
 # Override tfvars files with local settings (optional)
-# *.auto.tfvars
+*.auto.tfvars
 
 # === Claude Code / BMAD ===
 .claude/

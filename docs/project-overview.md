@@ -36,19 +36,20 @@ Single-project Infrastructure-as-Code repository with a four-layer pipeline:
 
 1. **Provision** — Terraform creates 6 VMs, 4 subnets, NICs, and cloud-init payloads
 2. **Bootstrap** — Ansible installs OS tooling, monitoring services (Prometheus, Grafana, Jaeger), SNMP simulator, and Docker
-3. **Deploy OpenNMS stack** — Ansible (submodule) deploys PostgreSQL, Kafka, OpenNMS Core, and OpenNMS Minion
+3. **Deploy OpenNMS stack** — Ansible (`indigo423.opennms` Galaxy collection, pinned by git SHA in `requirements.yml`) deploys PostgreSQL, Kafka, OpenNMS Core, and OpenNMS Minion
 4. **Run experiments** — per-scenario Ansible playbooks reconfigure the OpenNMS stack and load simulated nodes
 
 ## Repository Structure
 
 ```text
 opennms-benchmark/
-├── terraform/          # VM provisioning (Azure + KVM)
-├── bootstrap/          # OS + monitoring stack setup
-├── ansible-opennms/    # OpenNMS stack deployment (git submodule)
-├── experiments/        # Per-scenario benchmark configurations
-├── azcli/              # Legacy Azure CLI script (reference only)
-├── opennms-lab-vars.yml # Global OpenNMS variables
+├── terraform/            # VM provisioning (Azure + KVM)
+├── bootstrap/            # OS + monitoring stack setup
+├── opennms-playbook.yml  # OpenNMS stack deployment entry point
+├── requirements.yml      # Galaxy collection pins (indigo423.opennms + transitives)
+├── experiments/          # Per-scenario benchmark configurations
+├── azcli/                # Legacy Azure CLI script (reference only)
+├── opennms-lab-vars.yml  # Global OpenNMS variables
 └── ansible-inventory.yml # Static Ansible inventory
 ```
 
@@ -75,5 +76,5 @@ After a full deployment, these services are available on the lab network:
 
 ## Related Resources
 
-- [opennms-forge/ansible-opennms](https://github.com/opennms-forge/ansible-opennms) — Ansible roles submodule
+- [opennms-forge/ansible-opennms](https://github.com/opennms-forge/ansible-opennms) — source repo for the `indigo423.opennms` Galaxy collection
 - [Project Wiki](https://github.com/opennms-forge/opennms-benchmark/wiki) — experiment results and analysis

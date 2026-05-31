@@ -128,11 +128,12 @@ ansible-playbook -i ../ansible-inventory.yml reboot-playbook.yml
 ### Deploy the OpenNMS stack
 
 ```bash
-cd ansible-opennms
+ansible-galaxy collection install -r requirements.yml --force-with-deps
+
 ansible-playbook --user labuser --become \
-  -i ../ansible-inventory.yml \
+  -i ansible-inventory.yml \
   opennms-playbook.yml \
-  --extra-vars="@../opennms-lab-vars.yml"
+  --extra-vars="@opennms-lab-vars.yml"
 ```
 
 **Note:** After deployment, the Prometheus JMX exporter requires a manual restart of OpenNMS Core. See [ansible-opennms issue #57](https://github.com/opennms-forge/ansible-opennms/issues/57).
@@ -194,12 +195,35 @@ sudo tailscale up --accept-routes --advertise-routes=192.0.2.192/26
 - Commit message format: `<type>: <description>` (feat, fix, docs, chore)
 - CI validates Terraform on every PR touching `terraform/**`
 
-## Submodule Updates
+## Iterating on the OpenNMS Galaxy Collection
 
-To update the `ansible-opennms` submodule to the latest upstream version:
+The OpenNMS deployment automation lives in the `indigo423.opennms` Ansible Galaxy collection (source repo: `github.com/opennms-forge/ansible-opennms`). It is pinned by git SHA in `requirements.yml` so that benchmark runs are bit-for-bit reproducible.
+
+### Bumping the pinned SHA
+
+When upstream lands a change you want to consume in the lab:
 
 ```bash
-git submodule update --remote ansible-opennms
-git add ansible-opennms
-git commit -s -m "chore: update ansible-opennms submodule"
+# 1. Replace the version in requirements.yml with the new SHA from upstream.
+# 2. Re-install and re-deploy:
+ansible-galaxy collection install -r requirements.yml --force-with-deps
+ansible-playbook --user labuser --become \
+  -i ansible-inventory.yml opennms-playbook.yml \
+  --extra-vars="@opennms-lab-vars.yml"
 ```
+
+SHA bumps are deliberate, manual PRs — Renovate/Dependabot are intentionally not configured to auto-bump this pin, because a benchmark whose substrate silently changes between runs is uninterpretable.
+
+### Iterating on a role locally without an upstream PR cycle
+
+For active development of a role, point `requirements.yml` at a local checkout temporarily:
+
+```yaml
+# Local-dev override — NEVER commit this form
+collections:
+  - name: /Users/me/work/ansible-opennms
+    type: dir
+  # ... other collections unchanged
+```
+
+Then run `ansible-galaxy collection install -r requirements.yml --force` to pick up the local copy. **Revert this entry before committing** — the canonical pin is git+SHA, never `type: dir`.

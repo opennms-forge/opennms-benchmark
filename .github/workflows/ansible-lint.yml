@@ -6,6 +6,8 @@ on:
     paths:
       - "bootstrap/**"
       - "experiments/**"
+      - "opennms-playbook.yml"
+      - "requirements.yml"
       - ".ansible-lint"
 
 jobs:
@@ -14,14 +16,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
 
-      - name: Install collections
+      - name: Cache Ansible collections
+        uses: actions/cache@v4
+        with:
+          path: ~/.ansible/collections
+          key: ansible-collections-${{ hashFiles('requirements.yml', 'bootstrap/requirements.yml') }}
+
+      - name: Install bootstrap collections
         run: ansible-galaxy collection install -r bootstrap/requirements.yml -p ~/.ansible/collections --force-with-deps
 
+      - name: Install OpenNMS deployment collections
+        run: ansible-galaxy collection install -r requirements.yml -p ~/.ansible/collections --force-with-deps
+
       - name: Set Ansible roles path
-        run: echo "ANSIBLE_ROLES_PATH=$GITHUB_WORKSPACE/bootstrap/roles:$GITHUB_WORKSPACE/ansible-opennms/roles" >> "$GITHUB_ENV"
+        run: echo "ANSIBLE_ROLES_PATH=$GITHUB_WORKSPACE/bootstrap/roles" >> "$GITHUB_ENV"
+
+      # syntax-check only parses playbooks; it never needs to decrypt the vault.
+      # Provide a throwaway password file so the vault-encrypted group_vars load
+      # without a real secret in CI.
+      - name: Provide dummy vault password
+        run: |
+          mkdir -p ~/.config/ansible-opennms
+          echo dummy > ~/.config/ansible-opennms/vault-pass
+          echo "ANSIBLE_VAULT_PASSWORD_FILE=$HOME/.config/ansible-opennms/vault-pass" >> "$GITHUB_ENV"
 
       - name: Run ansible-lint
         uses: ansible/ansible-lint@v26

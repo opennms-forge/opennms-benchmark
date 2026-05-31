@@ -1,0 +1,57 @@
+---
+- name: Manage PostgreSQL database
+  hosts: database
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - indigo423.opennms.stub_pgsql
+
+- name: Manage Message broker
+  hosts: message_broker
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - indigo423.opennms.stub_kafka
+
+- name: Manage Elasticsearch
+  hosts: elasticsearch
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - indigo423.opennms.stub_elasticsearch
+
+- name: Manage Mimir
+  hosts: mimir
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - indigo423.opennms.stub_mimir
+
+- name: Manage Grafana
+  hosts: grafana
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - grafana.grafana.grafana
+    - indigo423.opennms.grafana_provisioning
+
+- name: Manage OpenNMS Horizon Core system
+  hosts: core
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - indigo423.opennms.opennms_core
+
+- name: Manage OpenNMS Horizon Minion
+  hosts: minion
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - indigo423.opennms.opennms_minion
+
+- name: Manage OpenNMS Horizon Sentinel
+  hosts: sentinel
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - indigo423.opennms.opennms_sentinel
