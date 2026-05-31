@@ -32,6 +32,15 @@ jobs:
       - name: Set Ansible roles path
         run: echo "ANSIBLE_ROLES_PATH=$GITHUB_WORKSPACE/bootstrap/roles" >> "$GITHUB_ENV"
 
+      # syntax-check only parses playbooks; it never needs to decrypt the vault.
+      # Provide a throwaway password file so the vault-encrypted group_vars load
+      # without a real secret in CI.
+      - name: Provide dummy vault password
+        run: |
+          mkdir -p ~/.config/ansible-opennms
+          echo dummy > ~/.config/ansible-opennms/vault-pass
+          echo "ANSIBLE_VAULT_PASSWORD_FILE=$HOME/.config/ansible-opennms/vault-pass" >> "$GITHUB_ENV"
+
       - name: Run ansible-lint
         uses: ansible/ansible-lint@v26
         with:
