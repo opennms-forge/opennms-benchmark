@@ -1,0 +1,20 @@
+---
+- name: Deploy gNMI Telemetryd configuration
+  ansible.builtin.copy:
+    src: "telemetryd-configuration.xml"
+    dest: "/etc/opennms/telemetryd-configuration.xml"
+    owner: opennms
+    group: opennms
+    mode: "0644"
+  notify:
+    - Reload telemetryd
+
+- name: Deploy gNMI OpenConfig adapter script
+  ansible.builtin.copy:
+    src: "telemetryd-adapters/nl6-gnmi-telemetry.groovy"
+    dest: "/etc/opennms/telemetryd-adapters/nl6-gnmi-telemetry.groovy"
+    owner: opennms
+    group: opennms
+    mode: "0644"
+  notify:
+    - Reload telemetryd

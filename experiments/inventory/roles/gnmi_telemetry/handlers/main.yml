@@ -1,0 +1,8 @@
+---
+- name: Reload telemetryd
+  ansible.builtin.command:
+    cmd: >-
+      /usr/share/opennms/bin/send-event.pl
+      -p 'daemonName Telemetryd'
+      uei.opennms.org/internal/reloadDaemonConfig
+  changed_when: true

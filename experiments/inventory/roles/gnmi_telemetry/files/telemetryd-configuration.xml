@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
 <!-- gNMI / OpenConfig telemetry for the nl6 simulated devices.
 
-These blocks must be MERGED into the OpenNMS Core $OPENNMS_HOME/etc/telemetryd-configuration.xml
-(do not overwrite that file wholesale — it also carries flow/syslog/trap listeners).
+Deployed verbatim to /etc/opennms/telemetryd-configuration.xml by the gnmi_telemetry
+Ansible role. This is the COMPLETE telemetryd config for the gNMI scenario and replaces
+the stock file — it enables only the gNMI connector. If you also need flow/syslog/trap
+listeners on this Core, add their blocks here.
 
 How it works:
   - The connector is a per-agent gRPC client. OpenNMS (or the Minion that owns the node)

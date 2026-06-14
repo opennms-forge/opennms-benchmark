@@ -2,6 +2,12 @@
 exclude_paths:
   - ansible-opennms/
 
+# experiments/inventory/ holds nl6 node-provisioning tooling, so ansible-lint
+# mis-detects playbooks there as inventory sources. Pin the gNMI deploy playbook
+# to the playbook kind so schema validation uses the right schema.
+kinds:
+  - playbook: "experiments/inventory/gnmi-telemetry.yml"
+
 skip_list:
   # var-naming[no-role-prefix]: snmpd_* is the established naming convention for
   # Net-SNMP daemon vars across community roles. Renaming to net_snmp_snmpd_* adds

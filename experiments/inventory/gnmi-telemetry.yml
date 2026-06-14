@@ -1,0 +1,6 @@
+---
+- name: Deploy gNMI telemetry to OpenNMS Horizon Core
+  hosts: core
+  become: true
+  roles:
+    - gnmi_telemetry
