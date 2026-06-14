@@ -15,6 +15,10 @@ OPENNMS_USER="${OPENNMS_USER:-admin}"
 OPENNMS_PASS="${OPENNMS_PASS:-admin}"
 FOREIGN_SOURCE="${FOREIGN_SOURCE:-opensim-inventory}"
 MINION_LOCATION="${MINION_LOCATION:-lab-location-01}"
+GNMI_SERVICE="${GNMI_SERVICE:-gNMI-Telemetry}"
+OC_PORT="${OC_PORT:-9339}"
+OC_MODE="${OC_MODE:-gnmi}"
+OC_PATHS="${OC_PATHS:-/interfaces/interface/state/counters,/components/component/state}"
 
 IMPORT=false
 DRY_RUN=false
@@ -38,6 +42,14 @@ Environment variables (all optional):
   OPENNMS_PASS      OpenNMS password         (default: admin)
   FOREIGN_SOURCE    Requisition foreign-source name (default: opensim-inventory)
   MINION_LOCATION   Minion location label    (default: lab-location-01)
+
+gNMI / OpenConfig telemetry (per-node requisition metadata, consumed by the
+OpenConfigConnector in telemetryd-configuration.xml):
+  GNMI_SERVICE      Monitored service that activates the connector (default: gNMI-Telemetry)
+  OC_PORT           Device gNMI/gRPC port    (default: 9339, the nl6 gNMI port)
+  OC_MODE           Stream mode: gnmi | jti  (default: gnmi)
+  OC_PATHS          Comma-separated OpenConfig subscription paths
+                    (default: /interfaces/interface/state/counters,/components/component/state)
 
 Examples:
   $0 --import                 # upload and trigger import in OpenNMS
@@ -69,6 +81,10 @@ from datetime import datetime, timezone
 url          = "${OPENSIM_URL}/api/v1/devices"
 foreign_source = "${FOREIGN_SOURCE}"
 location     = "${MINION_LOCATION}"
+gnmi_service = "${GNMI_SERVICE}"
+oc_port      = "${OC_PORT}"
+oc_mode      = "${OC_MODE}"
+oc_paths     = "${OC_PATHS}"
 
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
@@ -101,7 +117,12 @@ for device in devices:
     lines.append(f'        <interface ip-addr="{ip}" status="1" snmp-primary="P">')
     lines.append( '            <monitored-service service-name="ICMP"/>')
     lines.append( '            <monitored-service service-name="SNMP"/>')
+    lines.append(f'            <monitored-service service-name="{gnmi_service}"/>')
     lines.append( '        </interface>')
+    # OpenConfig connector config (per node); overrides telemetryd-configuration.xml defaults
+    lines.append(f'        <meta-data context="requisition" key="oc.port" value="{oc_port}"/>')
+    lines.append(f'        <meta-data context="requisition" key="oc.mode" value="{oc_mode}"/>')
+    lines.append(f'        <meta-data context="requisition" key="oc.paths" value="{oc_paths}"/>')
     lines.append( '    </node>')
 
 lines.append('</model-import>')
