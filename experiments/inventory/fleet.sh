@@ -12,8 +12,8 @@ set -eu
 usage() {
     cat >&2 <<EOF
 Usage:
-  $0 export <url> [file]
-  $0 import <url> [file] [--netmask MASK]
+  $0 export <url> [file] [--insecure]
+  $0 import <url> [file] [--netmask MASK] [--insecure]
 
 Commands:
   export   Capture the device inventory from a running nl6 simulator.
@@ -21,6 +21,9 @@ Commands:
   import   Replay an inventory file into another nl6 simulator.
            Default file:    nl6-inventory.json
            Default netmask: 255.255.0.0
+
+Options:
+  --insecure, -k   Skip TLS certificate verification (self-signed certs).
 
 import auto-detects the file shape:
   {data:[{ip,...},...]}  GET-response shape, one POST per device
@@ -37,17 +40,36 @@ shift
 
 case "$cmd" in
     export)
-        URL="${1:-}"
+        URL=""
+        FILE=""
+        INSECURE=""
+        while [ $# -gt 0 ]; do
+            case "$1" in
+                -k|--insecure)
+                    INSECURE="-k"; shift
+                    ;;
+                -*)
+                    echo "unknown option: $1" >&2; usage
+                    ;;
+                *)
+                    if [ -z "$URL" ]; then URL="$1"
+                    elif [ -z "$FILE" ]; then FILE="$1"
+                    else echo "unexpected argument: $1" >&2; usage
+                    fi
+                    shift
+                    ;;
+            esac
+        done
         [ -n "$URL" ] || usage
-        FILE="${2:-nl6-inventory.json}"
+        FILE="${FILE:-nl6-inventory.json}"
         URL="${URL%/}"
 
         printf 'Probing nl6 version at %s ... ' "$URL"
-        VERSION_JSON="$(curl -fsS "$URL/api/v1/version")"
+        VERSION_JSON="$(curl $INSECURE -fsS "$URL/api/v1/version")"
         printf '%s\n' "$VERSION_JSON"
 
         printf 'Fetching device inventory ... '
-        curl -fsS -H 'Accept: application/json' "$URL/api/v1/devices" \
+        curl $INSECURE -fsS -H 'Accept: application/json' "$URL/api/v1/devices" \
             | jq '.' > "$FILE"
 
         COUNT="$(jq '(.data // .devices // (if type=="array" then . else [] end)) | length' "$FILE")"
@@ -58,6 +80,7 @@ case "$cmd" in
         URL=""
         FILE=""
         NETMASK="255.255.0.0"
+        INSECURE=""
         while [ $# -gt 0 ]; do
             case "$1" in
                 --netmask)
@@ -66,6 +89,9 @@ case "$cmd" in
                     ;;
                 --netmask=*)
                     NETMASK="${1#--netmask=}"; shift
+                    ;;
+                -k|--insecure)
+                    INSECURE="-k"; shift
                     ;;
                 -*)
                     echo "unknown option: $1" >&2; usage
@@ -127,7 +153,7 @@ case "$cmd" in
             i=$((i + 1))
             label="$(printf '%s' "$payload" | jq -r '.start_ip // "?"')"
             tmp="$(mktemp)"
-            http_code="$(curl -sS -o "$tmp" -w '%{http_code}' \
+            http_code="$(curl $INSECURE -sS -o "$tmp" -w '%{http_code}' \
                 -X POST -H 'Content-Type: application/json' \
                 -d "$payload" \
                 "$URL/api/v1/devices")"
