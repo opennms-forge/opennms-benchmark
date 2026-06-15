@@ -18,11 +18,13 @@
     # your inventory (the SNMP simulation subnet is 10.42.0.0/16).
     gnmi_probe_host: "10.42.0.24"
   tasks:
+    # Match only IPC-namespace Kafka configs (twin/rpc/sink); a broad *kafka*
+    # match would also hit the Kafka producer/forwarder config and pass even
+    # when the Twin/IPC channel is still on ActiveMQ.
     - name: Find Kafka IPC (Twin) configuration on the Minion
       ansible.builtin.find:
         paths: /etc/minion
-        patterns: "*.cfg,*.properties"
-        contains: ".*kafka.*"
+        patterns: "org.opennms.core.ipc.*kafka*.cfg"
         recurse: true
       register: minion_kafka_ipc
 
@@ -30,14 +32,28 @@
       ansible.builtin.assert:
         that: minion_kafka_ipc.matched > 0
         fail_msg: >-
-          No Kafka IPC configuration found under /etc/minion. The OpenConfig
-          connector reaches the Minion via the Twin API over Kafka, so Kafka IPC
-          must be configured on the Minion before gNMI streaming can start.
+          No Kafka IPC configuration (org.opennms.core.ipc.*kafka*.cfg) found under
+          /etc/minion. The OpenConfig connector reaches the Minion via the Twin API
+          over Kafka, so Kafka IPC must be configured before gNMI streaming can start.
         success_msg: "Kafka IPC present; the Twin channel will deliver the connector."
 
-    - name: Verify the Minion can reach a sample gNMI device
-      ansible.builtin.wait_for:
-        host: "{{ gnmi_probe_host }}"
-        port: "{{ gnmi_port }}"
-        timeout: 5
-        state: started
+    # Informational reachability probe — must not block deployment, since gNMI is
+    # typically not yet enabled on the devices when this role is first applied.
+    - name: Probe a sample gNMI device port
+      block:
+        - name: Wait for the gNMI port on a sample device
+          ansible.builtin.wait_for:
+            host: "{{ gnmi_probe_host }}"
+            port: "{{ gnmi_port }}"
+            timeout: 5
+            state: started
+        - name: Report gNMI device reachable
+          ansible.builtin.debug:
+            msg: "gNMI probe to {{ gnmi_probe_host }}:{{ gnmi_port }} succeeded."
+      rescue:
+        - name: Report gNMI device not reachable
+          ansible.builtin.debug:
+            msg: >-
+              gNMI probe to {{ gnmi_probe_host }}:{{ gnmi_port }} FAILED — device not
+              reachable on the gNMI port. Enable gNMI on the nl6 device(s) and verify
+              Minion routing before expecting telemetry. This does not block deployment.

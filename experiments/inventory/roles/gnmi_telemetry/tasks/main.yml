@@ -9,6 +9,14 @@
   notify:
     - Reload telemetryd
 
+- name: Ensure the telemetryd-adapters directory exists
+  ansible.builtin.file:
+    path: "/etc/opennms/telemetryd-adapters"
+    state: directory
+    owner: opennms
+    group: opennms
+    mode: "0755"
+
 - name: Deploy gNMI OpenConfig adapter script
   ansible.builtin.copy:
     src: "telemetryd-adapters/nl6-gnmi-telemetry.groovy"

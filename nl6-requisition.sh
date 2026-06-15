@@ -77,6 +77,7 @@ requisition=$(python3 - <<PYEOF
 import json, ssl, sys
 import urllib.request
 from datetime import datetime, timezone
+from xml.sax.saxutils import quoteattr
 
 url          = "${OPENSIM_URL}/api/v1/devices"
 foreign_source = "${FOREIGN_SOURCE}"
@@ -117,12 +118,13 @@ for device in devices:
     lines.append(f'        <interface ip-addr="{ip}" status="1" snmp-primary="P">')
     lines.append( '            <monitored-service service-name="ICMP"/>')
     lines.append( '            <monitored-service service-name="SNMP"/>')
-    lines.append(f'            <monitored-service service-name="{gnmi_service}"/>')
+    lines.append(f'            <monitored-service service-name={quoteattr(gnmi_service)}/>')
     lines.append( '        </interface>')
-    # OpenConfig connector config (per node); overrides telemetryd-configuration.xml defaults
-    lines.append(f'        <meta-data context="requisition" key="oc.port" value="{oc_port}"/>')
-    lines.append(f'        <meta-data context="requisition" key="oc.mode" value="{oc_mode}"/>')
-    lines.append(f'        <meta-data context="requisition" key="oc.paths" value="{oc_paths}"/>')
+    # OpenConfig connector config (per node); overrides telemetryd-configuration.xml defaults.
+    # quoteattr() escapes XML metacharacters — gNMI paths legitimately contain [name="..."].
+    lines.append(f'        <meta-data context="requisition" key="oc.port" value={quoteattr(oc_port)}/>')
+    lines.append(f'        <meta-data context="requisition" key="oc.mode" value={quoteattr(oc_mode)}/>')
+    lines.append(f'        <meta-data context="requisition" key="oc.paths" value={quoteattr(oc_paths)}/>')
     lines.append( '    </node>')
 
 lines.append('</model-import>')
