@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!-- gNMI / OpenConfig telemetry for the nl6 simulated devices.
+
+Deployed verbatim to /etc/opennms/telemetryd-configuration.xml by the gnmi_telemetry
+Ansible role. This is the COMPLETE telemetryd config for the gNMI scenario and replaces
+the stock file — it enables only the gNMI connector. If you also need flow/syslog/trap
+listeners on this Core, add their blocks here.
+
+How it works:
+  - The connector is a per-agent gRPC client. OpenNMS (or the Minion that owns the node)
+    dials each device that carries the "gNMI-Telemetry" monitored service and issues a
+    gNMI Subscribe. nl6 nodes live at the Minion location, so the Minion runs the connectors.
+  - Per-node port/mode/paths come from requisition metadata emitted by nl6-requisition.sh
+    (oc.port / oc.mode / oc.paths). The defaults below (after the "|") are lab-wide fallbacks;
+    oc.port defaults to 9339, the nl6 gNMI port (NOT the OpenNMS doc default of 9000).
+  - The adapter runs nl6-gnmi-telemetry.groovy to turn each SubscribeResponse into a
+    CollectionSet. Deploy that script to $OPENNMS_HOME/etc/telemetryd-adapters/.
+
+Reload after editing:
+  $OPENNMS_HOME/bin/send-event.pl -p 'daemonName Telemetryd' \
+      uei.opennms.org/internal/reloadDaemonConfig
+-->
+<telemetryd-configuration xmlns="http://xmlns.opennms.org/xsd/config/telemetryd">
+
+    <connector name="gNMI-Telemetry-Connector"
+               class-name="org.opennms.netmgt.telemetry.protocols.openconfig.connector.OpenConfigConnector"
+               service-name="gNMI-Telemetry"
+               queue="gNMI-Telemetry"
+               enabled="true">
+        <package name="gNMI-Telemetry-Default">
+            <filter>IPADDR != '0.0.0.0'</filter>
+            <parameter key="port" value="${requisition:oc.port|9339}"/>
+            <parameter key="mode" value="${requisition:oc.mode|gnmi}"/>
+            <parameter key="paths" value="${requisition:oc.paths|/interfaces/interface/state/counters,/components/component/state}"/>
+        </package>
+    </connector>
+
+    <queue name="gNMI-Telemetry">
+        <adapter name="gNMI-Telemetry-Adapter"
+                 class-name="org.opennms.netmgt.telemetry.protocols.openconfig.adapter.OpenConfigAdapter"
+                 enabled="true">
+            <parameter key="script" value="${OPENNMS_HOME}/etc/telemetryd-adapters/nl6-gnmi-telemetry.groovy"/>
+        </adapter>
+    </queue>
+
+</telemetryd-configuration>
