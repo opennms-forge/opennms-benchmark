@@ -1,18 +1,11 @@
 ---
 version: 2
 updates:
+  # Glob covers every Terraform root under terraform/ (azure, kvm, proxmox,
+  # vmware) and self-heals when a new platform directory is added.
   - package-ecosystem: "terraform"
-    directory: "/terraform/azure"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "terraform"
-    directory: "/terraform/kvm"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "terraform"
-    directory: "/terraform/proxmox"
+    directories:
+      - "/terraform/*"
     schedule:
       interval: "weekly"
 
