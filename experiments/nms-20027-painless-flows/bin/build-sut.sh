@@ -51,13 +51,15 @@ echo "toolchain: $JAVA_VERSION / $MVN_VERSION"
 # leftover from an interrupted or different-SHA build is discarded, never
 # silently baked into the fixture.
 MARKER="$SRC_DIR/opennms-full-assembly/target/.built-from-sha"
+# The assembly emits a core + an optional tarball; opennms-container/core
+# consumes the CORE one. Anything other than exactly one core tarball aborts.
 pick_tarball() {
   local list count
-  list="$(ls "$SRC_DIR"/opennms-full-assembly/target/*.tar.gz 2>/dev/null || true)"
+  list="$(ls "$SRC_DIR"/opennms-full-assembly/target/*-core.tar.gz 2>/dev/null || true)"
   count="$(printf '%s' "$list" | grep -c . || true)"
   if [ "$count" -gt 1 ]; then
-    echo "ABORT: multiple tarballs in opennms-full-assembly/target — the fixture" >&2
-    echo "identity would be ambiguous. Remove all but the core assembly tarball:" >&2
+    echo "ABORT: multiple *-core.tar.gz in opennms-full-assembly/target — the" >&2
+    echo "fixture identity would be ambiguous. Remove all but one:" >&2
     printf '%s\n' "$list" >&2
     exit 1
   fi
