@@ -37,10 +37,20 @@ echo "toolchain: $JAVA_VERSION / $MVN_VERSION"
 # --- 1.2 assembly tarball ----------------------------------------------------
 # Exact invocation is defined by the checked-out branch (README/.circleci) —
 # historically ./compile.pl then ./assemble.pl. Verify there before trusting this.
+# A tarball is only reused when the marker ties it to the pinned SHA — a
+# leftover from an interrupted or different-SHA build is discarded, never
+# silently baked into the fixture.
+MARKER="$SRC_DIR/opennms-full-assembly/target/.built-from-sha"
 TARBALL="$(ls "$SRC_DIR"/opennms-full-assembly/target/*.tar.gz 2>/dev/null | head -1 || true)"
+if [ -n "$TARBALL" ] && [ "$(cat "$MARKER" 2>/dev/null || true)" != "$PINNED_SHA" ]; then
+  echo "discarding stale tarball not tied to $PINNED_SHA: $TARBALL"
+  rm -f "$SRC_DIR"/opennms-full-assembly/target/*.tar.gz "$MARKER"
+  TARBALL=""
+fi
 if [ -z "$TARBALL" ]; then
   (cd "$SRC_DIR" && ./compile.pl && ./assemble.pl -Dopennms.home=/opt/opennms)
   TARBALL="$(ls "$SRC_DIR"/opennms-full-assembly/target/*.tar.gz | head -1)"
+  echo "$PINNED_SHA" > "$MARKER"
 fi
 TARBALL_SHA256="$(shasum -a 256 "$TARBALL" | awk '{print $1}')"
 echo "tarball: $TARBALL ($TARBALL_SHA256)"

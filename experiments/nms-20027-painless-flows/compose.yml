@@ -16,6 +16,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       retries: 6
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
   horizon:
     # Built once from PR #8638 by bin/build-sut.sh (shared-fixture rule), which
@@ -54,6 +56,10 @@ services:
       test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
       interval: 10s
       retries: 12
+    volumes:
+      # The 40M-flow corpus is a multi-hour fixture — it MUST survive container
+      # recreation. Only the intentional teardown (`down -v`) removes it.
+      - esdata:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"    # doc-count guard + correctness-diff access
 
@@ -68,3 +74,7 @@ services:
       - /dev/net/tun
     volumes:
       - ./scenarios:/etc/nl6/scenarios:ro
+
+volumes:
+  esdata:
+  pgdata:

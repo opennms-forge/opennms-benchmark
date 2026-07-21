@@ -18,8 +18,12 @@ TRIALS="${TRIALS:-6}"
 
 EXP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 QUERIES="$EXP_DIR/queries/queries.json"
+CORPUS_ID="$EXP_DIR/build/corpus-identity.json"
 OUT="$EXP_DIR/results/$VARIANT"
 mkdir -p "$OUT"
+
+[ -f "$CORPUS_ID" ] || { echo "missing $CORPUS_ID — seed + reconcile first (tasks 3.x)" >&2; exit 1; }
+EXPECTED_COUNT="$(jq -r '.doc_count' "$CORPUS_ID")"
 
 T0="$WINDOW_START"
 T1="$WINDOW_END"
@@ -30,7 +34,11 @@ doc_count() { curl -sf "$ES_URL/netflow-*/_count" | jq -r '.count'; }
 
 PRE_COUNT="$(doc_count)"
 echo "$PRE_COUNT" > "$OUT/doc-count.pre"
-echo "corpus doc count (pre): $PRE_COUNT"
+if [ "$PRE_COUNT" != "$EXPECTED_COUNT" ]; then
+  echo "ABORT: corpus doc count $PRE_COUNT != seeded count $EXPECTED_COUNT (corpus-identity.json) — corpus lost or mutated" >&2
+  exit 1
+fi
+echo "corpus doc count (pre): $PRE_COUNT (matches seeded identity)"
 
 jq -c '.queries[]' "$QUERIES" | while read -r q; do
   shape="$(jq -r '.shape' <<<"$q")"
@@ -67,4 +75,13 @@ if [ "$PRE_COUNT" != "$POST_COUNT" ]; then
   echo "ABORT: corpus mutated during trials ($PRE_COUNT -> $POST_COUNT) — block results are invalid" >&2
   exit 1
 fi
+
+# Run record of what ACTUALLY executed — emit-manifest.sh embeds this as
+# workload.parameters so mismatched windows/trial counts fail the gate.
+jq -n --argjson trials "$TRIALS" \
+      --argjson window_start_ms "$T0" --argjson window_end_ms "$T1" \
+      --argjson shapes "$(jq '[.queries[].shape] | unique' "$QUERIES")" \
+  '{trials: $trials, window_start_ms: $window_start_ms, window_end_ms: $window_end_ms,
+    shapes: $shapes, warmup_discarded: 1}' > "$OUT/trial-params.json"
+
 echo "corpus doc count stable ($POST_COUNT) — block valid, results in $OUT"

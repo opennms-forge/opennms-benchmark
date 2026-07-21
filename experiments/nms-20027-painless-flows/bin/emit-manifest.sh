@@ -13,19 +13,28 @@ ES_URL="${ES_URL:-http://localhost:9200}"
 EXP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 IDENTITY="$EXP_DIR/build/fixture-identity.json"
 CORPUS="$EXP_DIR/build/corpus-identity.json"       # written after seed reconciliation (task 3.4)
+PARAMS="$EXP_DIR/results/$VARIANT/trial-params.json"  # written by run-trials.sh on a valid block
 OUT="$EXP_DIR/results/$VARIANT/run-manifest.json"
 HORIZON_CTR="$(docker compose -f "$EXP_DIR/compose.yml" ps -q horizon)"
 
 [ -f "$IDENTITY" ] || { echo "missing $IDENTITY — run bin/build-sut.sh first" >&2; exit 1; }
 [ -f "$CORPUS" ]   || { echo "missing $CORPUS — seed + reconcile first (tasks 3.x)" >&2; exit 1; }
+[ -f "$PARAMS" ]   || { echo "missing $PARAMS — run bin/run-trials.sh for $VARIANT first" >&2; exit 1; }
 
 # --- run-time probes (measure.md table) --------------------------------------
 VERSION="$(curl -su admin:admin "$BASE_URL/rest/info" | jq -r '.displayVersion // .version')"
 JVM_CMDLINE="$(docker exec "$HORIZON_CTR" sh -c "ps -o args= -p 1 || cat /proc/1/cmdline | tr '\0' ' '")"
 JVM_VERSION="$(docker exec "$HORIZON_CTR" java -version 2>&1 | head -1)"
 # Heap/GC derived from the RUNNING process, never from config files (measure.md).
-JVM_HEAP="$(grep -oE '\-Xms[^ ]+ \-Xmx[^ ]+' <<<"$JVM_CMDLINE" || echo 'PROBE FAILED — rerun, do not backfill')"
-JVM_GC="$(grep -oE '\-XX:\+Use[A-Za-z0-9]+GC' <<<"$JVM_CMDLINE" | head -1 || echo 'PROBE FAILED — rerun, do not backfill')"
+# A failed probe ABORTS: a sentinel value would compare equal across variants
+# and pass the comparability gate on a control it never verified.
+JVM_HEAP="$(grep -oE '\-Xms[^ ]+ \-Xmx[^ ]+' <<<"$JVM_CMDLINE" || true)"
+JVM_GC="$(grep -oE '\-XX:\+Use[A-Za-z0-9]+GC' <<<"$JVM_CMDLINE" | head -1 || true)"
+if [ -z "$JVM_HEAP" ] || [ -z "$JVM_GC" ]; then
+  echo "ABORT: heap/GC probe failed on running cmdline: $JVM_CMDLINE" >&2
+  echo "Fix the probe or the SUT and re-emit — never backfill." >&2
+  exit 1
+fi
 # ES + drift plugin are declared controls with a documented fallback pair —
 # record them so a mid-experiment fallback swap cannot pass the gate unnoticed.
 ES_VERSION="$(curl -sf "$ES_URL/" | jq -r '.version.number')"
@@ -35,7 +44,12 @@ DB_VERSION="$(docker exec "$(docker compose -f "$EXP_DIR/compose.yml" ps -q data
 TSS_BACKEND="$(docker exec "$HORIZON_CTR" sh -c \
   "grep -h '^org.opennms.timeseries.strategy' /opt/opennms/etc/opennms.properties* 2>/dev/null | tail -1" \
   || echo 'org.opennms.timeseries.strategy=rrd (default)')"
-CONFIG_DELTA="overlay $VARIANT: $(shasum -a 256 "$EXP_DIR/variants/$VARIANT/org.opennms.features.flows.persistence.elastic.cfg" | awk '{print $1}') proportionalSumStrategy=$(grep -o 'proportionalSumStrategy=.*' "$EXP_DIR/variants/$VARIANT/org.opennms.features.flows.persistence.elastic.cfg")"
+# Hash the WHOLE overlay dir (README: everything mounted is the config_delta),
+# so a stray difference in any added control file fails the gate.
+OVERLAY_DIR="$EXP_DIR/variants/$VARIANT"
+OVERLAY_SHA="$(cd "$OVERLAY_DIR" && find . -type f | sort | xargs shasum -a 256 | shasum -a 256 | awk '{print $1}')"
+STRATEGY="$(grep -o 'proportionalSumStrategy=.*' "$OVERLAY_DIR/org.opennms.features.flows.persistence.elastic.cfg")"
+CONFIG_DELTA="overlay $VARIANT (all files): $OVERLAY_SHA $STRATEGY"
 
 case "$(uname)" in
   Darwin) CPU="$(sysctl -n machdep.cpu.brand_string) ($(sysctl -n hw.ncpu) cores)"
@@ -65,6 +79,7 @@ jq -n \
   --arg started "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --slurpfile fixture "$IDENTITY" \
   --slurpfile corpus "$CORPUS" \
+  --slurpfile params "$PARAMS" \
   '{
     experiment: {
       question: "Does replacing the elasticsearch-drift-plugin proportional_sum aggregation with inline Painless scripts (PR #8638 / NMS-20027) regress netflow query performance?",
@@ -88,9 +103,9 @@ jq -n \
             hygiene_notes: "laptop scope: governor/turbo not pinned; relative A/B only" },
     workload: {
       axis: "rest-ui",
-      generator_scenario: "queries/queries.json (6 trials x dense+sparse, fixed order, trial 1 discarded)",
+      generator_scenario: "queries/queries.json (fixed order, trial 1 discarded)",
       generator_version: "curl (trial runner) / seed: \($nl6)",
-      parameters: { trials: 6, shapes: ["dense", "sparse"], warmup_discarded: 1 },
+      parameters: $params[0],
       fixtures: [
         { name: "sut-image", identity: $fixture[0].image_digest },
         { name: "assembly-tarball", identity: $fixture[0].tarball_sha256 },
