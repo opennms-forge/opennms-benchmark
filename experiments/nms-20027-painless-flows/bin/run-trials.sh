@@ -10,8 +10,6 @@
 set -euo pipefail
 
 VARIANT="${VARIANT:?set VARIANT=variant-b-plugin or variant-c-painless}"
-WINDOW_START="${WINDOW_START:?seed window start, epoch ms}"
-WINDOW_END="${WINDOW_END:?seed window end, epoch ms}"
 BASE_URL="${BASE_URL:-http://localhost:8980/opennms}"
 ES_URL="${ES_URL:-http://localhost:9200}"
 TRIALS="${TRIALS:-6}"
@@ -23,10 +21,22 @@ OUT="$EXP_DIR/results/$VARIANT"
 mkdir -p "$OUT"
 
 [ -f "$CORPUS_ID" ] || { echo "missing $CORPUS_ID — seed + reconcile first (tasks 3.x)" >&2; exit 1; }
+# corpus-identity.json contract (written by the seed step, task 3.4 — see README):
+#   { "doc_count": <n>, "window_start_ms": <T0>, "window_end_ms": <T1> }
+# The query window comes from HERE, not from env — the seeded window is the
+# only window the corpus can answer for; a hand-typed one can silently miss it.
 EXPECTED_COUNT="$(jq -r '.doc_count' "$CORPUS_ID")"
+T0="$(jq -r '.window_start_ms' "$CORPUS_ID")"
+T1="$(jq -r '.window_end_ms' "$CORPUS_ID")"
+case "$EXPECTED_COUNT/$T0/$T1" in *null*)
+  echo "ABORT: $CORPUS_ID must contain doc_count, window_start_ms, window_end_ms (got: $(cat "$CORPUS_ID"))" >&2
+  exit 1;;
+esac
 
-T0="$WINDOW_START"
-T1="$WINDOW_END"
+# Never let a stale run record survive an aborted re-run of this variant.
+rm -f "$OUT/trial-params.json"
+QUERIES_SHA="$(shasum -a 256 "$QUERIES" | awk '{print $1}')"
+
 T0_PLUS_1H=$((T0 + 3600000))
 STEP_DENSE=$(( (T1 - T0) / 288 ))
 
@@ -81,7 +91,8 @@ fi
 jq -n --argjson trials "$TRIALS" \
       --argjson window_start_ms "$T0" --argjson window_end_ms "$T1" \
       --argjson shapes "$(jq '[.queries[].shape] | unique' "$QUERIES")" \
+      --arg queries_sha256 "$QUERIES_SHA" \
   '{trials: $trials, window_start_ms: $window_start_ms, window_end_ms: $window_end_ms,
-    shapes: $shapes, warmup_discarded: 1}' > "$OUT/trial-params.json"
+    shapes: $shapes, queries_sha256: $queries_sha256, warmup_discarded: 1}' > "$OUT/trial-params.json"
 
 echo "corpus doc count stable ($POST_COUNT) — block valid, results in $OUT"

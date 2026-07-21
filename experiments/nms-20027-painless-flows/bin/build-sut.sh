@@ -17,10 +17,15 @@ IDENTITY="$BUILD_DIR/fixture-identity.json"
 mkdir -p "$BUILD_DIR"
 
 if [ -f "$IDENTITY" ]; then
-  echo "HORIZON_IMAGE=$(jq -r '.image' "$IDENTITY")" > "$EXP_DIR/.env"
-  echo "fixture-identity.json exists — fixture already built, reusing (task 1.4):"
-  cat "$IDENTITY"
-  exit 0
+  IDENTITY_SHA="$(jq -r '.git_sha' "$IDENTITY")"
+  if [ "$IDENTITY_SHA" = "$PINNED_SHA" ]; then
+    echo "HORIZON_IMAGE=$(jq -r '.image' "$IDENTITY")" > "$EXP_DIR/.env"
+    echo "fixture-identity.json matches $PINNED_SHA — fixture already built, reusing (task 1.4):"
+    cat "$IDENTITY"
+    exit 0
+  fi
+  echo "fixture-identity.json is for $IDENTITY_SHA, not $PINNED_SHA — rebuilding"
+  rm -f "$IDENTITY"
 fi
 
 # --- 1.1 pinned checkout + toolchain record ---------------------------------
@@ -29,6 +34,11 @@ if [ ! -d "$SRC_DIR/.git" ]; then
 fi
 git -C "$SRC_DIR" fetch origin "$PINNED_SHA"
 git -C "$SRC_DIR" checkout --detach "$PINNED_SHA"
+if [ -n "$(git -C "$SRC_DIR" status --porcelain)" ]; then
+  echo "ABORT: source tree has local modifications — a tarball built from it would" >&2
+  echo "carry uncommitted changes while the manifest certifies $PINNED_SHA." >&2
+  exit 1
+fi
 
 JAVA_VERSION="$(java -version 2>&1 | head -1)"
 MVN_VERSION="$( (cd "$SRC_DIR" && ./mvnw --version 2>/dev/null || mvn --version) | head -1)"
@@ -41,7 +51,19 @@ echo "toolchain: $JAVA_VERSION / $MVN_VERSION"
 # leftover from an interrupted or different-SHA build is discarded, never
 # silently baked into the fixture.
 MARKER="$SRC_DIR/opennms-full-assembly/target/.built-from-sha"
-TARBALL="$(ls "$SRC_DIR"/opennms-full-assembly/target/*.tar.gz 2>/dev/null | head -1 || true)"
+pick_tarball() {
+  local list count
+  list="$(ls "$SRC_DIR"/opennms-full-assembly/target/*.tar.gz 2>/dev/null || true)"
+  count="$(printf '%s' "$list" | grep -c . || true)"
+  if [ "$count" -gt 1 ]; then
+    echo "ABORT: multiple tarballs in opennms-full-assembly/target — the fixture" >&2
+    echo "identity would be ambiguous. Remove all but the core assembly tarball:" >&2
+    printf '%s\n' "$list" >&2
+    exit 1
+  fi
+  printf '%s' "$list"
+}
+TARBALL="$(pick_tarball)"
 if [ -n "$TARBALL" ] && [ "$(cat "$MARKER" 2>/dev/null || true)" != "$PINNED_SHA" ]; then
   echo "discarding stale tarball not tied to $PINNED_SHA: $TARBALL"
   rm -f "$SRC_DIR"/opennms-full-assembly/target/*.tar.gz "$MARKER"
@@ -49,7 +71,8 @@ if [ -n "$TARBALL" ] && [ "$(cat "$MARKER" 2>/dev/null || true)" != "$PINNED_SHA
 fi
 if [ -z "$TARBALL" ]; then
   (cd "$SRC_DIR" && ./compile.pl && ./assemble.pl -Dopennms.home=/opt/opennms)
-  TARBALL="$(ls "$SRC_DIR"/opennms-full-assembly/target/*.tar.gz | head -1)"
+  TARBALL="$(pick_tarball)"
+  [ -n "$TARBALL" ] || { echo "ABORT: assembly produced no tarball" >&2; exit 1; }
   echo "$PINNED_SHA" > "$MARKER"
 fi
 TARBALL_SHA256="$(shasum -a 256 "$TARBALL" | awk '{print $1}')"

@@ -44,12 +44,21 @@ DB_VERSION="$(docker exec "$(docker compose -f "$EXP_DIR/compose.yml" ps -q data
 TSS_BACKEND="$(docker exec "$HORIZON_CTR" sh -c \
   "grep -h '^org.opennms.timeseries.strategy' /opt/opennms/etc/opennms.properties* 2>/dev/null | tail -1" \
   || echo 'org.opennms.timeseries.strategy=rrd (default)')"
-# Hash the WHOLE overlay dir (README: everything mounted is the config_delta),
-# so a stray difference in any added control file fails the gate.
+# The IV is ONLY the proportionalSumStrategy line; it goes into config_delta,
+# which the gate exempts as the declared IV. Everything ELSE in the overlay is
+# a control, so its hash lives in sut.overlay_sha — a gated comparability path
+# (an exempted config_delta could never catch a stray control-file difference).
+# The hash strips the IV line, so byte-identical controls give the SAME sha on
+# both variants: dotfiles excluded, C collation, filenames included.
 OVERLAY_DIR="$EXP_DIR/variants/$VARIANT"
-OVERLAY_SHA="$(cd "$OVERLAY_DIR" && find . -type f | sort | xargs shasum -a 256 | shasum -a 256 | awk '{print $1}')"
-STRATEGY="$(grep -o 'proportionalSumStrategy=.*' "$OVERLAY_DIR/org.opennms.features.flows.persistence.elastic.cfg")"
-CONFIG_DELTA="overlay $VARIANT (all files): $OVERLAY_SHA $STRATEGY"
+STRATEGY="$(grep -o 'proportionalSumStrategy=.*' \
+  "$OVERLAY_DIR/org.opennms.features.flows.persistence.elastic.cfg")"
+OVERLAY_SHA="$(cd "$OVERLAY_DIR" && LC_ALL=C find . -type f -not -name '.*' | LC_ALL=C sort | \
+  while read -r f; do
+    printf '== %s\n' "$f"
+    grep -v '^proportionalSumStrategy=' "$f" || true
+  done | shasum -a 256 | awk '{print $1}')"
+CONFIG_DELTA="overlay $VARIANT: $STRATEGY"
 
 case "$(uname)" in
   Darwin) CPU="$(sysctl -n machdep.cpu.brand_string) ($(sysctl -n hw.ncpu) cores)"
@@ -74,6 +83,7 @@ jq -n \
   --arg db "$DB_VERSION" \
   --arg tss "$TSS_BACKEND" \
   --arg config_delta "$CONFIG_DELTA" \
+  --arg overlay_sha "$OVERLAY_SHA" \
   --arg cpu "$CPU" --argjson ram "$RAM_GB" --arg os "$(uname -srm)" \
   --arg nl6 "$NL6_VERSION" \
   --arg started "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
@@ -96,6 +106,7 @@ jq -n \
       db_version: $db,
       tss_backend: $tss,
       config_delta: $config_delta,
+      overlay_sha: $overlay_sha,
       provisioner: "container-branch"
     },
     host: { cpu: $cpu, ram_gb: $ram, disk: "nvme (laptop)", os: $os,
@@ -121,6 +132,7 @@ jq -n \
       "sut.db_version",
       "sut.tss_backend",
       "sut.config_delta",
+      "sut.overlay_sha",
       "host.cpu",
       "host.ram_gb",
       "host.disk",

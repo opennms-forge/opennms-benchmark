@@ -60,13 +60,16 @@ curl -su admin:admin localhost:8980/opennms/rest/info   # version matches the SH
 # 3. Seed the corpus once (~2.2 h at 5k flows/s); reconcile ledger   [tasks 3.1–3.4]
 #    Pin the nl6 image in compose.yml first, then: docker compose up -d nl6
 #    Load scenarios/flow-seed.json into nl6 (REST API / UI — verify flags at nl6.eu).
-#    Record T0/T1 (epoch ms) and the reconciled doc count into build/corpus-identity.json.
+#    Then write build/corpus-identity.json with EXACTLY these keys (the scripts
+#    read them; the query window comes from here, never from hand-typed env):
+#      { "doc_count": <reconciled count>,
+#        "window_start_ms": <T0 epoch ms>, "window_end_ms": <T1 epoch ms> }
 
-# 4. Trials                                                          [tasks 4.1–4.6]
-WINDOW_START=<T0-ms> WINDOW_END=<T1-ms> VARIANT=variant-b-plugin ./bin/run-trials.sh
+# 4. Trials (window + doc count are read from corpus-identity.json)  [tasks 4.1–4.6]
+VARIANT=variant-b-plugin ./bin/run-trials.sh
 VARIANT=variant-b-plugin ./bin/emit-manifest.sh
 VARIANT=variant-c-painless docker compose up -d --force-recreate horizon   # flips the one line
-WINDOW_START=<T0-ms> WINDOW_END=<T1-ms> VARIANT=variant-c-painless ./bin/run-trials.sh
+VARIANT=variant-c-painless ./bin/run-trials.sh
 VARIANT=variant-c-painless ./bin/emit-manifest.sh
 
 # 5. Stats, correctness diff, report                                 [tasks 5.1–5.5]
@@ -76,6 +79,15 @@ VARIANT=variant-c-painless ./bin/emit-manifest.sh
 
 # 6. Teardown                                                        [task 6.1]
 docker compose down -v
+```
+
+**From-scratch reset** (rerun the experiment, or after re-pinning the SHA): the
+named volumes and the host-side identity files have independent lifecycles and
+MUST be cleared together, or the guards report contradictory states
+("already built" vs. "corpus lost"):
+
+```sh
+docker compose down -v && rm -rf build/ results/ .env
 ```
 
 ## Verify-at-use gates (do not skip)
