@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# Task 4.2: trial runner. 6 trials x 2 shapes in the fixed order of
+# queries/queries.json; every raw response persisted (status/body/timing) keyed
+# by variant/shape/trial. Doc-count guard before/after the block aborts on any
+# corpus mutation (spec: corpus-seed). Trial 1 is warmup — persisted but marked
+# discarded; statistics use trials 2-6 only (computed later, task 5.1).
+set -euo pipefail
+
+VARIANT="${VARIANT:?set VARIANT=variant-b-plugin or variant-c-painless}"
+WINDOW_START="${WINDOW_START:?seed window start, epoch ms}"
+WINDOW_END="${WINDOW_END:?seed window end, epoch ms}"
+BASE_URL="${BASE_URL:-http://localhost:8980/opennms}"
+ES_URL="${ES_URL:-http://localhost:9200}"
+TRIALS="${TRIALS:-6}"
+
+EXP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+QUERIES="$EXP_DIR/queries/queries.json"
+OUT="$EXP_DIR/results/$VARIANT"
+mkdir -p "$OUT"
+
+T0="$WINDOW_START"
+T1="$WINDOW_END"
+T0_PLUS_1H=$((T0 + 3600000))
+STEP_DENSE=$(( (T1 - T0) / 288 ))
+
+doc_count() { curl -sf "$ES_URL/netflow-*/_count" | jq -r '.count'; }
+
+PRE_COUNT="$(doc_count)"
+echo "$PRE_COUNT" > "$OUT/doc-count.pre"
+echo "corpus doc count (pre): $PRE_COUNT"
+
+jq -c '.queries[]' "$QUERIES" | while read -r q; do
+  shape="$(jq -r '.shape' <<<"$q")"
+  name="$(jq -r '.name' <<<"$q")"
+  path="$(jq -r '.path' <<<"$q")"
+  path="${path//\$\{T0\}/$T0}"
+  path="${path//\$\{T1\}/$T1}"
+  path="${path//\$\{T0_PLUS_1H\}/$T0_PLUS_1H}"
+  path="${path//\$\{STEP_DENSE\}/$STEP_DENSE}"
+
+  qdir="$OUT/$shape/$name"
+  mkdir -p "$qdir"
+  for trial in $(seq 1 "$TRIALS"); do
+    body="$qdir/trial-$trial.body.json"
+    status_time="$(curl -su admin:admin -o "$body" \
+      -w '%{http_code} %{time_total}' "$BASE_URL$path")"
+    status="${status_time% *}"
+    time_total="${status_time#* }"
+    [ "$status" = "200" ] || { echo "ABORT: $name trial $trial returned HTTP $status" >&2; exit 1; }
+    jq -n --arg variant "$VARIANT" --arg shape "$shape" --arg name "$name" \
+          --arg path "$path" --argjson trial "$trial" \
+          --argjson status "$status" --argjson time_total_s "$time_total" \
+          --argjson discarded "$([ "$trial" -eq 1 ] && echo true || echo false)" \
+      '{variant:$variant, shape:$shape, name:$name, path:$path, trial:$trial,
+        status:$status, time_total_s:$time_total_s, warmup_discarded:$discarded}' \
+      > "$qdir/trial-$trial.meta.json"
+    echo "$VARIANT $shape/$name trial $trial: ${time_total}s"
+  done
+done
+
+POST_COUNT="$(doc_count)"
+echo "$POST_COUNT" > "$OUT/doc-count.post"
+if [ "$PRE_COUNT" != "$POST_COUNT" ]; then
+  echo "ABORT: corpus mutated during trials ($PRE_COUNT -> $POST_COUNT) — block results are invalid" >&2
+  exit 1
+fi
+echo "corpus doc count stable ($POST_COUNT) — block valid, results in $OUT"
