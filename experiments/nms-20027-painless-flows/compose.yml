@@ -65,9 +65,9 @@ services:
 
   nl6:
     # Seed generator (push telemetry only — no TUN routing needed for flows).
-    # TODO(task 3.1): pin a real release tag/digest before use; the placeholder
-    # fails `docker pull` on purpose. Record the digest as workload.generator_version.
-    image: ghcr.io/labmonkeys-space/nl6:TODO-pin-release
+    # Pinned by immutable digest (v0.17.0, released 2026-07-20, linux/amd64+arm64);
+    # emit-manifest records the RepoDigest as workload.generator_version.
+    image: ghcr.io/labmonkeys-space/nl6:v0.17.0@sha256:c1934b7997366d4c2d417d24e79486e88637d10ff34cdaffc9ce5d5af0195ab5
     cap_add:
       - NET_ADMIN
     devices:
