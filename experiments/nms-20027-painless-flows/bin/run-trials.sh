@@ -37,8 +37,10 @@ esac
 rm -f "$OUT/trial-params.json"
 QUERIES_SHA="$(shasum -a 256 "$QUERIES" | awk '{print $1}')"
 
-T0_PLUS_1H=$((T0 + 3600000))
-STEP_DENSE=$(( (T1 - T0) / 288 ))
+# Bucket counts pin the code paths (DENSE_BUCKET_LIMIT=4096 in the PR):
+# 288 buckets -> dense, 6000 -> sparse. Steps floor at 1ms.
+STEP_DENSE=$(( (T1 - T0) / 288 )); [ "$STEP_DENSE" -ge 1 ] || STEP_DENSE=1
+STEP_SPARSE=$(( (T1 - T0) / 6000 )); [ "$STEP_SPARSE" -ge 1 ] || STEP_SPARSE=1
 
 doc_count() { curl -sf "$ES_URL/netflow-*/_count" | jq -r '.count'; }
 
@@ -56,8 +58,8 @@ jq -c '.queries[]' "$QUERIES" | while read -r q; do
   path="$(jq -r '.path' <<<"$q")"
   path="${path//\$\{T0\}/$T0}"
   path="${path//\$\{T1\}/$T1}"
-  path="${path//\$\{T0_PLUS_1H\}/$T0_PLUS_1H}"
   path="${path//\$\{STEP_DENSE\}/$STEP_DENSE}"
+  path="${path//\$\{STEP_SPARSE\}/$STEP_SPARSE}"
 
   qdir="$OUT/$shape/$name"
   mkdir -p "$qdir"

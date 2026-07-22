@@ -111,7 +111,7 @@ jq -n \
     },
     host: { cpu: $cpu, ram_gb: $ram, disk: "nvme (laptop)", os: $os,
             generator_colocated: true,
-            hygiene_notes: "laptop scope: governor/turbo not pinned; relative A/B only" },
+            hygiene_notes: "laptop scope: governor/turbo not pinned; Docker VM net.core.rmem_max=64MB (non-persistent sysctl); relative A/B only" },
     workload: {
       axis: "rest-ui",
       generator_scenario: "queries/queries.json (fixed order, trial 1 discarded)",

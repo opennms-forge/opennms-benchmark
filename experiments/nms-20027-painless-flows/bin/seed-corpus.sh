@@ -11,9 +11,12 @@
 # 8000s), DRAIN (default 30s), TOLERANCE_PCT accepted-vs-sent (default 99.5).
 set -euo pipefail
 
+# Offered rate MUST match the ES indexing ceiling (~1.8k docs/s tuned): flow
+# volume is ~512 records/device/min (~8.5/s), so ~200 participants saturate the
+# sink without ballooning Horizon's persist queue over a long window.
 DEVICES="${DEVICES:-200}"
-RATE="${RATE:-25}"
-WINDOW="${WINDOW:-8000s}"
+RATE="${RATE:-25}"          # NOTE: no-op for flow protocols
+WINDOW="${WINDOW:-23400s}"  # 200 dev x ~8.5/s ≈ 1.7k/s -> 40M in ~6.5h; override for smaller corpora
 DRAIN="${DRAIN:-30s}"
 TOLERANCE_PCT="${TOLERANCE_PCT:-99.5}"
 CALIBRATE="${CALIBRATE:-0}"
@@ -25,7 +28,11 @@ mkdir -p "$EXP_DIR/build"
 
 es_count() { curl -sf "$ES_URL/netflow-*/_count" | jq -r '.count' || echo 0; }
 
-PARTICIPANTS="$(jq -n --argjson n "$DEVICES" '[range($n) | "10.42.0.\(. + 1)"]')"
+# Participants come from nl6's own device inventory (guessing the IP layout
+# breaks past 10.42.0.254 — the fleet rolls into 10.42.1.x).
+PARTICIPANTS="$(curl -sf "$NL6_API/devices" | jq --argjson n "$DEVICES" '[.data[].ip] | sort | .[:$n]')"
+GOT="$(jq 'length' <<<"$PARTICIPANTS")"
+[ "$GOT" = "$DEVICES" ] || { echo "ABORT: nl6 has $GOT devices, need $DEVICES" >&2; exit 1; }
 PRE_COUNT="$(es_count)"
 
 SCENARIO="$(jq -n --argjson participants "$PARTICIPANTS" \
@@ -46,33 +53,55 @@ echo "scenario $ID started"
 while :; do
   PHASE="$(curl -sf "$NL6_API/scenarios/$ID" | jq -r '.phase')"
   case "$PHASE" in
-    completed|finished|done|reported) break;;
+    stopped|completed|finished|done|reported) break;;
     failed|aborted) echo "ABORT: scenario phase=$PHASE" >&2; exit 1;;
   esac
   sleep 30
 done
 
+# t0/t1 live on the scenario status (the report summary carries no window).
+STATUS="$(curl -sf "$NL6_API/scenarios/$ID")"
 REPORT="$EXP_DIR/build/seed-report-$ID.json"
 curl -sf "$NL6_API/scenarios/$ID/report" > "$REPORT"
 
-SENT="$(jq '[.. | objects | select(has("sent")) | .sent] | add' "$REPORT")"
-FAILURES="$(jq '[.. | objects | select(has("send_failures")) | .send_failures] | add' "$REPORT")"
-DROPPED="$(jq '[.. | objects | select(has("dropped")) | .dropped] | add' "$REPORT")"
+# summary.* only — the report ALSO carries per-device counters; summing
+# recursively double-counts the ledger (measured exactly 2x in calibration).
+SENT="$(jq '.summary.sent' "$REPORT")"
+FAILURES="$(jq '.summary.send_failures' "$REPORT")"
+DROPPED="$(jq '.summary.dropped' "$REPORT")"
 if [ "${FAILURES:-0}" != "0" ] || [ "${DROPPED:-0}" != "0" ]; then
   echo "ABORT: generator was the bottleneck (send_failures=$FAILURES dropped=$DROPPED) — rerun lower" >&2
   exit 1
 fi
 
-# ES refresh so the count is final, then reconcile delivered vs accepted.
-curl -sf -X POST "$ES_URL/netflow-*/_refresh" > /dev/null || true
-POST_COUNT="$(es_count)"
-ACCEPTED=$((POST_COUNT - PRE_COUNT))
+# The persist pipeline drains for minutes after T1 (ES-indexing-bound, measured
+# ~1.8k docs/s) — follow the count until it reaches the ledger or plateaus.
+LAST=-1; STABLE=0
+while :; do
+  curl -sf -X POST "$ES_URL/netflow-*/_refresh" > /dev/null || true
+  POST_COUNT="$(es_count)"
+  ACCEPTED=$((POST_COUNT - PRE_COUNT))
+  [ "$ACCEPTED" -ge "$SENT" ] && break
+  if [ "$POST_COUNT" = "$LAST" ]; then
+    STABLE=$((STABLE + 1))
+    [ "$STABLE" -ge 6 ] && { echo "count plateaued at $ACCEPTED of $SENT — no further drain for 3 min"; break; }
+  else
+    STABLE=0
+  fi
+  LAST="$POST_COUNT"
+  sleep 30
+done
 RATIO="$(jq -n --argjson a "$ACCEPTED" --argjson s "$SENT" '($a / $s * 100 * 100 | round) / 100')"
 echo "ledger sent=$SENT accepted=$ACCEPTED (records/event ratio incl. loss: ${RATIO}%)"
 
 if [ "$CALIBRATE" = "1" ]; then
   echo "CALIBRATION ONLY — no corpus-identity written. Report: $REPORT"
   exit 0
+fi
+
+if [ "$ACCEPTED" != "$((POST_COUNT))" ] && [ "$PRE_COUNT" != "0" ]; then
+  echo "NOTE: ES held $PRE_COUNT pre-existing docs (calibration debris?) —" >&2
+  echo "for a clean corpus, wipe first: curl -X DELETE '$ES_URL/netflow-*'" >&2
 fi
 
 OK="$(jq -n --argjson a "$ACCEPTED" --argjson s "$SENT" --argjson t "$TOLERANCE_PCT" \
@@ -82,14 +111,19 @@ if [ "$OK" != "true" ]; then
   exit 1
 fi
 
-T0_MS="$(jq -r '.t0' "$REPORT" | python3 -c 'import sys,datetime;print(int(datetime.datetime.fromisoformat(sys.stdin.read().strip().replace("Z","+00:00")).timestamp()*1000))')"
-T1_MS="$(jq -r '.t1' "$REPORT" | python3 -c 'import sys,datetime;print(int(datetime.datetime.fromisoformat(sys.stdin.read().strip().replace("Z","+00:00")).timestamp()*1000))')"
+T0_MS="$(jq -r '.t0' <<<"$STATUS" | python3 -c 'import sys,datetime;print(int(datetime.datetime.fromisoformat(sys.stdin.read().strip().replace("Z","+00:00")).timestamp()*1000))')"
+T1_MS="$(jq -r '.t1' <<<"$STATUS" | python3 -c 'import sys,datetime;print(int(datetime.datetime.fromisoformat(sys.stdin.read().strip().replace("Z","+00:00")).timestamp()*1000))')"
 
 jq -n --argjson doc_count "$POST_COUNT" \
       --argjson window_start_ms "$T0_MS" --argjson window_end_ms "$T1_MS" \
       --arg scenario_id "$ID" --arg report "$(basename "$REPORT")" \
   '{doc_count: $doc_count, window_start_ms: $window_start_ms, window_end_ms: $window_end_ms,
     scenario_id: $scenario_id, seed_report: $report}' > "$EXP_DIR/build/corpus-identity.json"
+
+# Ingest tuning off: trials need a searchable, settled index.
+curl -sf -X PUT "$ES_URL/netflow-*/_settings" -H 'Content-Type: application/json' \
+  -d '{"index.refresh_interval":"1s"}' > /dev/null || true
+curl -sf -X POST "$ES_URL/netflow-*/_refresh" > /dev/null || true
 
 echo "corpus admitted — identity:"
 cat "$EXP_DIR/build/corpus-identity.json"
