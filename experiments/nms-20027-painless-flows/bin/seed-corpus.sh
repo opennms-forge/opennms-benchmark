@@ -63,6 +63,9 @@ done
 STATUS="$(curl -sf "$NL6_API/scenarios/$ID")"
 REPORT="$EXP_DIR/build/seed-report-$ID.json"
 curl -sf "$NL6_API/scenarios/$ID/report" > "$REPORT"
+# nl6 renders the ledger natively — keep the human-readable form with the results.
+mkdir -p "$EXP_DIR/results/nl6"
+curl -sf "$NL6_API/scenarios/$ID/report?format=html" > "$EXP_DIR/results/nl6/seed-report-$ID.html" || true
 
 # summary.* only — the report ALSO carries per-device counters; summing
 # recursively double-counts the ledger (measured exactly 2x in calibration).
@@ -111,6 +114,29 @@ if [ "$OK" != "true" ]; then
   exit 1
 fi
 
+# Official per-device reconciliation (nl6-reconcile, ships with nl6 releases;
+# exit 0 = all keys OK, 1 = LOSS/DUP/MISSING/PHANTOM, 2 = usage). Joins the
+# ledger's (protocol, source_ip, collector) tuples against ES per-exporter
+# counts — only possible when flow-source-per-device=true gave each device its
+# own exporter identity; with shared-socket sourcing (cardinality 1) the
+# aggregate check above is the gate and this step is skipped.
+RECONCILE_BIN="${RECONCILE_BIN:-$(ls "$EXP_DIR"/build/nl6-reconcile-* 2>/dev/null | head -1 || true)}"
+CARD="$(curl -sf "$ES_URL/netflow-*/_search" -H 'Content-Type: application/json' \
+  -d '{"size":0,"aggs":{"card":{"cardinality":{"field":"host"}}}}' | jq -r '.aggregations.card.value')"
+if [ -n "$RECONCILE_BIN" ] && [ -x "$RECONCILE_BIN" ] && [ "$CARD" -ge "$DEVICES" ]; then
+  COLL="$(jq -r '.counters[0].collector' "$REPORT")"
+  { echo "protocol,source_ip,collector,received"
+    curl -sf "$ES_URL/netflow-*/_search" -H 'Content-Type: application/json' \
+      -d "{\"size\":0,\"aggs\":{\"per_dev\":{\"terms\":{\"field\":\"host\",\"size\":$((DEVICES * 2))}}}}" |
+      jq -r --arg c "$COLL" '.aggregations.per_dev.buckets[] | "ipfix,\(.key),\($c),\(.doc_count)"'
+  } > "$EXP_DIR/build/received-$ID.csv"
+  "$RECONCILE_BIN" -report "$REPORT" -received "$EXP_DIR/build/received-$ID.csv" \
+    | tee "$EXP_DIR/results/nl6/reconcile-$ID.txt" \
+    || { echo "ABORT: nl6-reconcile found loss/duplication — corpus rejected" >&2; exit 1; }
+else
+  echo "nl6-reconcile skipped (binary: ${RECONCILE_BIN:-none}; exporter cardinality $CARD vs $DEVICES devices) — aggregate check is the gate"
+fi
+
 T0_MS="$(jq -r '.t0' <<<"$STATUS" | python3 -c 'import sys,datetime;print(int(datetime.datetime.fromisoformat(sys.stdin.read().strip().replace("Z","+00:00")).timestamp()*1000))')"
 T1_MS="$(jq -r '.t1' <<<"$STATUS" | python3 -c 'import sys,datetime;print(int(datetime.datetime.fromisoformat(sys.stdin.read().strip().replace("Z","+00:00")).timestamp()*1000))')"
 
@@ -136,6 +162,10 @@ echo "direction normalization: $(jq -c '{total, updated, failures: (.failures|le
 curl -sf -X PUT "$ES_URL/netflow-*/_settings" -H 'Content-Type: application/json' \
   -d '{"index.refresh_interval":"1s"}' > /dev/null || true
 curl -sf -X POST "$ES_URL/netflow-*/_refresh" > /dev/null || true
+
+# The ledger report and corpus identity travel with the results (task 6.1).
+mkdir -p "$EXP_DIR/results/nl6"
+cp "$REPORT" "$EXP_DIR/results/nl6/" && cp "$EXP_DIR/build/corpus-identity.json" "$EXP_DIR/results/"
 
 echo "corpus admitted — identity:"
 cat "$EXP_DIR/build/corpus-identity.json"
