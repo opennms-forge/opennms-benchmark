@@ -69,10 +69,30 @@ services:
     # Pinned by immutable digest (v0.17.0, released 2026-07-20, linux/amd64+arm64);
     # emit-manifest records the RepoDigest as workload.generator_version.
     image: ghcr.io/labmonkeys-space/nl6:v0.17.0@sha256:c1934b7997366d4c2d417d24e79486e88637d10ff34cdaffc9ce5d5af0195ab5
+    # 200 seed devices; IPFIX to Horizon's stock-enabled Multi-UDP-9999 listener.
+    # Shared-socket sourcing (no per-device netns routing needed in-container);
+    # -fidelity keeps the fleet silent outside the scenario window so the
+    # ledger is the only traffic source.
+    command:
+      - "-auto-start-ip"
+      - "10.42.0.1"
+      - "-auto-count"
+      - "1000"
+      - "-flow-protocol"
+      - "ipfix"
+      - "-flow-collector"
+      - "horizon:9999"
+      - "-flow-source-per-device=false"
+      - "-flow-tick-interval"
+      - "1"    # 1s emission ticks: 5x smaller bursts, same rate — the receiver's
+               # UDP rcvbuf overflowed on the default 5s batch cycle at 1000 devices
+      - "-fidelity"
     cap_add:
       - NET_ADMIN
     devices:
       - /dev/net/tun
+    ports:
+      - "8081:8080"    # loadtest REST API (bin/seed-corpus.sh)
     volumes:
       - ./scenarios:/etc/nl6/scenarios:ro
 

@@ -57,13 +57,17 @@ VARIANT=variant-b-plugin docker compose up -d database elasticsearch horizon
 curl -s localhost:9200/_cat/plugins            # drift plugin listed
 curl -su admin:admin localhost:8980/opennms/rest/info   # version matches the SHA build
 
-# 3. Seed the corpus once (~2.2 h at 5k flows/s); reconcile ledger   [tasks 3.1–3.4]
-#    Pin the nl6 image in compose.yml first, then: docker compose up -d nl6
-#    Load scenarios/flow-seed.json into nl6 (REST API / UI — verify flags at nl6.eu).
-#    Then write build/corpus-identity.json with EXACTLY these keys (the scripts
-#    read them; the query window comes from here, never from hand-typed env):
-#      { "doc_count": <reconciled count>,
-#        "window_start_ms": <T0 epoch ms>, "window_end_ms": <T1 epoch ms> }
+# 3. Seed the corpus once; reconcile ledger                          [tasks 3.1–3.4]
+#    docker compose up -d nl6, then bin/seed-corpus.sh drives the scenario and
+#    writes build/corpus-identity.json (doc_count + seeded window) itself.
+#    MEASURED CONSTRAINTS (this host): flow volume is ~512 records/device/min
+#    (the scenario 'rate' field is a no-op for flow protocols); end-to-end
+#    ingest is ES-indexing-bound at ~1.7-1.8k docs/s with refresh disabled, so
+#    DEVICES=200 matches the sink. Sizing: docs = devices x 512 x minutes
+#    (1M ≈ 200 x 600s; 40M would be ~6.5 h). Wipe calibration debris first
+#    (delete BY NAME — ES 8 rejects wildcard deletes):
+#      curl -X DELETE "localhost:9200/$(curl -s 'localhost:9200/_cat/indices/netflow-*?h=index' | tr '\n' ',')"
+DEVICES=200 WINDOW=600s ./bin/seed-corpus.sh
 
 # 4. Trials (window + doc count are read from corpus-identity.json)  [tasks 4.1–4.6]
 VARIANT=variant-b-plugin ./bin/run-trials.sh
@@ -101,5 +105,16 @@ docker compose down -v && rm -rf build/ results/ .env
 - **Query-shape rendering** (task 4.1): on variant C confirm the dense query renders a
   `scripted_metric` *with* `nBuckets` and the sparse one *without* (enable Elastic query
   logging or inspect via ES slow log) before starting timed trials.
-- **Seed rate re-budget** (task 3.2): check the ledger rate 30 min in; below ~5k flows/s,
-  recompute the wall-clock budget before continuing.
+- **Disable the ES shard request cache before trials**
+  (`PUT netflow-*/_settings {"index.requests.cache.enable": false}`): identical repeated
+  queries on a static corpus are otherwise answered from the cache (measured 10.7 s cold
+  vs 0.04 s cached — the trials would benchmark the cache). Probed into
+  `sut.elasticsearch.request_cache` so the gate enforces it on both variants.
+- **Seed rate re-budget** (task 3.2): resolved by calibration — ingest is ES-bound at
+  ~1.2k docs/s at ES defaults (lossless after `net.core.rmem_max=64MB` in the Docker
+  VM — a NON-PERSISTENT sysctl that must be re-applied after a VM restart:
+  `docker run --rm --privileged --pid=host alpine nsenter -t 1 -m -u -n -i sysctl -w net.core.rmem_max=67108864`).
+  Do NOT pre-create composable index templates for `netflow-*` to tune ingest: in
+  ES 8 they REPLACE (not merge with) OpenNMS's legacy `netflow` template, the index
+  is created with dynamic text mappings, and every flow aggregation then fails with
+  a fielddata error — the corpus must be re-seeded. At 1M docs, defaults are fine.
