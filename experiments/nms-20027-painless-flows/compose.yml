@@ -23,6 +23,7 @@ services:
     # Built once from PR #8638 by bin/build-sut.sh (shared-fixture rule), which
     # writes HORIZON_IMAGE into .env — the single source of truth for the tag.
     image: ${HORIZON_IMAGE:?run bin/build-sut.sh first — it writes HORIZON_IMAGE into .env}
+    command: ["-s"]    # init/update database + start (the image defaults to printing usage)
     depends_on:
       database:
         condition: service_healthy
