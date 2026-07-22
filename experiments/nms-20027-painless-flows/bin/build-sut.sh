@@ -84,7 +84,13 @@ TARBALL_SHA256="$(shasum -a 256 "$TARBALL" | awk '{print $1}')"
 echo "tarball: $TARBALL ($TARBALL_SHA256)"
 
 # --- 1.3 container image from the tarball ------------------------------------
-docker build -t "$IMAGE_TAG" "$SRC_DIR/opennms-container/core"
+# Upstream recipe: `make image` sanity-checks the tarball, unpacks it into
+# tarball-root/, and drives docker buildx with the branch's build args.
+# It requires the DEFAULT buildx builder to be active and tags the result
+# opennms/horizon:<pom-version>; we retag to our pinned fixture tag.
+UPSTREAM_VERSION="$("$SRC_DIR/.circleci/scripts/pom2version.sh" "$SRC_DIR/pom.xml")"
+make -C "$SRC_DIR/opennms-container/core" image
+docker image tag "opennms/horizon:$UPSTREAM_VERSION" "$IMAGE_TAG"
 IMAGE_DIGEST="$(docker inspect --format '{{.Id}}' "$IMAGE_TAG")"
 
 # --- record identities (feeds every run manifest) -----------------------------
