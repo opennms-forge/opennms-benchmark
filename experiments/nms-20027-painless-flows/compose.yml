@@ -1,0 +1,81 @@
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# NMS-20027 painless-vs-drift-plugin A/B stack (laptop-container scope).
+# Core + PostgreSQL + Elasticsearch + nl6 only — no Minion/Sentinel/Kafka.
+# Select the variant via VARIANT=variant-b-plugin | variant-c-painless.
+# Co-located layout: valid for relative A/B claims only (never absolute capacity).
+
+services:
+  database:
+    image: postgres:15.13            # pinned; recorded as sut.db_version in the manifest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 6
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  horizon:
+    # Built once from PR #8638 by bin/build-sut.sh (shared-fixture rule), which
+    # writes HORIZON_IMAGE into .env — the single source of truth for the tag.
+    image: ${HORIZON_IMAGE:?run bin/build-sut.sh first — it writes HORIZON_IMAGE into .env}
+    command: ["-s"]    # init/update database + start (the image defaults to printing usage)
+    depends_on:
+      database:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      TZ: UTC
+      POSTGRES_HOST: database
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      # Pinned JVM controls (manifest: sut.jvm) — never rely on image defaults.
+      JAVA_OPTS: -Xms4g -Xmx4g -XX:+UseG1GC
+    volumes:
+      # The ONLY difference between variants is the proportionalSumStrategy line
+      # inside this overlay. Everything mounted here is the manifest's config_delta.
+      - ./variants/${VARIANT:?set VARIANT=variant-b-plugin or variant-c-painless}:/opt/opennms-etc-overlay:ro
+    ports:
+      - "8980:8980"    # base_url (REST/UI — the trial runner's target)
+      - "8101:8101"    # Karaf shell (measure vitals)
+
+  elasticsearch:
+    # ES 8.18.2 + drift plugin v2.0.7_es-8.18.2, identical for BOTH variants
+    # (plugin idle in variant C). Fallback pair: ES 7.17.13 + v2.0.5_es-7.17.13.
+    build: ./es
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms4g -Xmx4g      # pinned control; scripted_metric runs here
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      retries: 12
+    volumes:
+      # The 40M-flow corpus is a multi-hour fixture — it MUST survive container
+      # recreation. Only the intentional teardown (`down -v`) removes it.
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"    # doc-count guard + correctness-diff access
+
+  nl6:
+    # Seed generator (push telemetry only — no TUN routing needed for flows).
+    # Pinned by immutable digest (v0.17.0, released 2026-07-20, linux/amd64+arm64);
+    # emit-manifest records the RepoDigest as workload.generator_version.
+    image: ghcr.io/labmonkeys-space/nl6:v0.17.0@sha256:c1934b7997366d4c2d417d24e79486e88637d10ff34cdaffc9ce5d5af0195ab5
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./scenarios:/etc/nl6/scenarios:ro
+
+volumes:
+  esdata:
+  pgdata:
