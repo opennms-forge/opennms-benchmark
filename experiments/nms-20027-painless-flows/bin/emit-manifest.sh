@@ -13,8 +13,8 @@ ES_URL="${ES_URL:-http://localhost:9200}"
 EXP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 IDENTITY="$EXP_DIR/build/fixture-identity.json"
 CORPUS="$EXP_DIR/build/corpus-identity.json"       # written after seed reconciliation (task 3.4)
-PARAMS="$EXP_DIR/results/$VARIANT/trial-params.json"  # written by run-trials.sh on a valid block
-OUT="$EXP_DIR/results/$VARIANT/run-manifest.json"
+PARAMS="$EXP_DIR/results/benchmark/$VARIANT/trial-params.json"  # written by run-trials.sh on a valid block
+OUT="$EXP_DIR/results/benchmark/$VARIANT/run-manifest.json"
 HORIZON_CTR="$(docker compose -f "$EXP_DIR/compose.yml" ps -q horizon)"
 
 [ -f "$IDENTITY" ] || { echo "missing $IDENTITY — run bin/build-sut.sh first" >&2; exit 1; }
