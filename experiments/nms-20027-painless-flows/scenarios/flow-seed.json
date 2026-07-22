@@ -1,13 +1,18 @@
 {
-  "_comment": "NMS-20027 corpus seed (SPDX-License-Identifier: Apache-2.0 — JSON carries no header; repo LICENSE governs). One-time 40M-flow corpus build: 5000 flows/s x 8000 s. NOT a steady-state ingestion benchmark — the ledger reconciliation gates corpus admission (accepted must match in_window within tolerance or the corpus is rejected). Verify loadtest field names against nl6 upstream (nl6.eu) before use — task 3.1.",
+  "_comment": "NMS-20027 corpus seed (SPDX-License-Identifier: Apache-2.0 — JSON carries no header; repo LICENSE governs). One-time 40M-flow corpus build: 200 devices x 25/s = 5000 flows/s x 8000 s. NOT a steady-state ingestion benchmark — the ledger reconciliation gates corpus admission (bin/seed-corpus.sh). Field names verified against nl6 v0.17.0 (nl6.eu/reference/loadtest-api): rate is PER DEVICE (cap 1000/s).",
   "name": "nms-20027-corpus-seed",
   "axis": "push-telemetry",
   "protocol": "ipfix",
   "loadtest": {
-    "phases": ["arm", "run", "report"],
-    "window_s": 8000,
-    "rate_per_s": 5000,
-    "senders": 200
+    "api": "POST /api/v1/scenarios -> arm -> start -> report (driven by bin/seed-corpus.sh)",
+    "create_body": {
+      "participants": "10.42.0.1 .. 10.42.0.200 (200 devices)",
+      "protocol": "ipfix",
+      "rate": 25,
+      "window": "8000s",
+      "drain": "30s",
+      "seed": 42
+    }
   },
   "reconcile": {
     "delivered": "ledger in_window count",
