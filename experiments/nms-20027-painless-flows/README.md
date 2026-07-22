@@ -105,8 +105,16 @@ docker compose down -v && rm -rf build/ results/ .env
 - **Query-shape rendering** (task 4.1): on variant C confirm the dense query renders a
   `scripted_metric` *with* `nBuckets` and the sparse one *without* (enable Elastic query
   logging or inspect via ES slow log) before starting timed trials.
+- **Disable the ES shard request cache before trials**
+  (`PUT netflow-*/_settings {"index.requests.cache.enable": false}`): identical repeated
+  queries on a static corpus are otherwise answered from the cache (measured 10.7 s cold
+  vs 0.04 s cached — the trials would benchmark the cache). Probed into
+  `sut.elasticsearch.request_cache` so the gate enforces it on both variants.
 - **Seed rate re-budget** (task 3.2): resolved by calibration — ingest is ES-bound at
-  ~1.7-1.8k docs/s (lossless after `net.core.rmem_max=64MB` in the Docker VM — a
-  NON-PERSISTENT sysctl that must be re-applied after a VM restart:
+  ~1.2k docs/s at ES defaults (lossless after `net.core.rmem_max=64MB` in the Docker
+  VM — a NON-PERSISTENT sysctl that must be re-applied after a VM restart:
   `docker run --rm --privileged --pid=host alpine nsenter -t 1 -m -u -n -i sysctl -w net.core.rmem_max=67108864`).
-  seed-corpus.sh disables index refresh during the seed and restores it after.
+  Do NOT pre-create composable index templates for `netflow-*` to tune ingest: in
+  ES 8 they REPLACE (not merge with) OpenNMS's legacy `netflow` template, the index
+  is created with dynamic text mappings, and every flow aggregation then fails with
+  a fielddata error — the corpus must be re-seeded. At 1M docs, defaults are fine.

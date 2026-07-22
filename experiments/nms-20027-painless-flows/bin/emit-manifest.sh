@@ -39,6 +39,10 @@ fi
 # record them so a mid-experiment fallback swap cannot pass the gate unnoticed.
 ES_VERSION="$(curl -sf "$ES_URL/" | jq -r '.version.number')"
 ES_PLUGINS="$(curl -sf "$ES_URL/_cat/plugins?h=component,version" | sort | tr '\n' ';')"
+# Request cache MUST be disabled on the corpus for trials — identical repeated
+# queries on a static index are otherwise served from the shard request cache
+# (measured: 10.7s cold vs 0.04s cached). Recorded as a gated control.
+ES_REQ_CACHE="$(curl -sf "$ES_URL/netflow-*/_settings?filter_path=*.settings.index.requests" | jq -c '[.[].settings.index.requests.cache.enable] | unique')"
 DB_VERSION="$(docker exec "$(docker compose -f "$EXP_DIR/compose.yml" ps -q database)" \
   psql -U postgres -tAc 'SELECT version()')"
 TSS_BACKEND="$(docker exec "$HORIZON_CTR" sh -c \
@@ -80,6 +84,7 @@ jq -n \
   --arg jvm_gc "$JVM_GC" \
   --arg es_version "$ES_VERSION" \
   --arg es_plugins "$ES_PLUGINS" \
+  --arg es_req_cache "$ES_REQ_CACHE" \
   --arg db "$DB_VERSION" \
   --arg tss "$TSS_BACKEND" \
   --arg config_delta "$CONFIG_DELTA" \
@@ -102,7 +107,7 @@ jq -n \
                           tarball_sha256: $fixture[0].tarball_sha256 },
       jvm: { version: $jvm_version,
              heap: $jvm_heap, gc: $jvm_gc, flags: $jvm_cmdline },
-      elasticsearch: { version: $es_version, plugins: $es_plugins },
+      elasticsearch: { version: $es_version, plugins: $es_plugins, request_cache: $es_req_cache },
       db_version: $db,
       tss_backend: $tss,
       config_delta: $config_delta,

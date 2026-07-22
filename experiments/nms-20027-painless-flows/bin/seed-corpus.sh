@@ -118,7 +118,19 @@ jq -n --argjson doc_count "$POST_COUNT" \
       --argjson window_start_ms "$T0_MS" --argjson window_end_ms "$T1_MS" \
       --arg scenario_id "$ID" --arg report "$(basename "$REPORT")" \
   '{doc_count: $doc_count, window_start_ms: $window_start_ms, window_end_ms: $window_end_ms,
-    scenario_id: $scenario_id, seed_report: $report}' > "$EXP_DIR/build/corpus-identity.json"
+    scenario_id: $scenario_id, seed_report: $report,
+    normalization: "netflow.direction: unknown -> ingress (nl6 emits no IPFIX flowDirection)"}' \
+  > "$EXP_DIR/build/corpus-identity.json"
+
+# nl6 does not emit IPFIX flowDirection; OpenNMS filters queries by direction,
+# so 'unknown' docs are invisible. Normalize deterministically (doc count is
+# unchanged; recorded in the corpus identity below).
+NORM="$(curl -sf -X POST "$ES_URL/netflow-*/_update_by_query?refresh=true&wait_for_completion=true&requests_per_second=-1" \
+  -H 'Content-Type: application/json' \
+  -d '{"script":{"source":"if (ctx._source.netflow != null) { ctx._source.netflow.direction = \"ingress\" } else { ctx._source[\"netflow.direction\"] = \"ingress\" }","lang":"painless"},
+       "query":{"term":{"netflow.direction":"unknown"}}}')"
+echo "direction normalization: $(jq -c '{total, updated, failures: (.failures|length)}' <<<"$NORM")"
+[ "$(jq '.failures|length' <<<"$NORM")" = "0" ] || { echo "ABORT: normalization failures" >&2; exit 1; }
 
 # Ingest tuning off: trials need a searchable, settled index.
 curl -sf -X PUT "$ES_URL/netflow-*/_settings" -H 'Content-Type: application/json' \
