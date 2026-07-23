@@ -90,7 +90,9 @@ locals {
   inv_hosts = {
     for key, n in local.nodes :
     local.topology[key].vm_name => {
-      ansible_host = [for i in local.topology[key].interfaces : i.address if i.subnet == "mgmt"][0]
+      # mgmt NIC address; "" if a role has no mgmt subnet (caught by the inventory
+      # module precondition with a clear message rather than a cryptic index error).
+      ansible_host = try([for i in local.topology[key].interfaces : i.address if i.subnet == "mgmt"][0], "")
       groups       = try(n.cfg.groups, [])
       # nl6 runs on the netsim host; expose its sim NIC name for the generator.
       host_vars = n.prole == "netsim" ? {
@@ -100,10 +102,14 @@ locals {
   }
 
   # The jump host is the public_ip node (its external DHCP IP is var.jump_host).
-  jump_node_keys = [for key, n in local.nodes : key if try(n.cfg.public_ip, false)]
-  jump_host_name = length(local.jump_node_keys) > 0 ? local.topology[local.jump_node_keys[0]].vm_name : ""
+  # one() errors if a spec marks more than one node public_ip; null if none.
+  jump_node_key  = one([for key, n in local.nodes : key if try(n.cfg.public_ip, false)])
+  jump_host_name = local.jump_node_key != null ? local.topology[local.jump_node_key].vm_name : ""
 
-  # Composed parent group; children absent from the deployment are dropped.
+  # Canonical opennms_stack membership. TSDB/flow backends (mimir, victoriametrics,
+  # clickhouse, akvorado) are intentionally excluded — OpenNMS writes to them; they
+  # are not orchestrated as part of the stack group. Children absent from the
+  # selected deployment are dropped by the inventory module.
   onms_stack_children = ["database", "core", "message_broker", "elasticsearch", "minion", "sentinel", "grafana"]
 }
 

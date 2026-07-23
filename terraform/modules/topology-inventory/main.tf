@@ -28,6 +28,17 @@ locals {
 
 resource "local_file" "ansible_inventory" {
   filename = "${path.root}/../../ansible-inventory.yml"
+
+  # NOTE: the template intentionally mirrors the legacy modules/inventory template
+  # while azure/proxmox/vmware still use it. When they migrate to this module the
+  # legacy one is removed and this becomes the single source.
+  lifecycle {
+    precondition {
+      condition     = alltrue([for h, n in var.hosts : try(n.ansible_host, "") != ""])
+      error_message = "Every host needs a management IP (ansible_host); a role in the deployment is missing a 'mgmt' subnet in its topology.yml interfaces."
+    }
+  }
+
   content = templatefile("${path.module}/templates/inventory.yml.tftpl", {
     hosts          = var.hosts
     admin_user     = var.admin_user
