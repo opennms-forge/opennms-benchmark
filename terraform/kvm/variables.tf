@@ -26,6 +26,13 @@ variable "vm_names" {
 variable "ip_elasticsearch" { type = string }
 variable "ip_es_core" { type = string }
 
+# Deployment selector — resolves deployments/<deployment>/topology.yml.
+variable "deployment" {
+  type        = string
+  default     = "baseline"
+  description = "Deployment slug under deployments/; selects the topology spec to provision."
+}
+
 # KVM-specific (from kvm.tfvars)
 variable "libvirt_uri" { type = string }
 variable "storage_pool" { type = string }

@@ -17,28 +17,15 @@ variable "network_sim_id" { type = string }
 variable "network_mgmt_id" { type = string }
 variable "network_external_id" { type = string }
 
-variable "disk_sizes_gb" {
-  type        = map(number)
-  description = "Disk size in GB per role (keyed by topology role name)"
-  default = {
-    database      = 50
-    core          = 100
-    kafka         = 50
-    minion        = 20
-    netsim        = 20
-    monitoring    = 30
-    elasticsearch = 50
-  }
-}
-
-# Topology spec (keyed by role); see terraform/kvm/main.tf for the schema. One
-# interfaces list per role drives both the cloud-init network-config and the
-# libvirt_domain network interfaces (in the same order).
+# Topology (keyed by node); see terraform/kvm/main.tf for how it is derived from
+# the deployment spec. One interfaces list per node drives both the cloud-init
+# network-config and the libvirt_domain network interfaces (in the same order).
 variable "topology" {
   type = map(object({
     vm_name = string
     memory  = number
     vcpu    = number
+    disk_gb = number
     interfaces = list(object({
       subnet     = string
       iface_name = string

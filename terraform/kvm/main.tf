@@ -13,74 +13,80 @@ locals {
   # The monitoring VM is the exception: it routes out via its DHCP external NIC.
   gateway_mgmt = cidrhost(var.subnet_mgmt, 1)
 
-  # Topology spec (keyed by role): the deployment-under-test as data. Node count
-  # is 1 per role today; interface addresses/gateways/sizes are the current
-  # values, so this refactor is byte-for-byte identical in plan. One interfaces
-  # list per role drives both cloud-init network-config and the domain NICs.
+  # ── deployment spec → kvm topology translation ────────────────────────────
+  # Read the provider-agnostic spec (roles/count/size/subnets/groups/routes) and
+  # translate it into the provider-specific topology the compute module consumes.
+  spec = yamldecode(file("${path.root}/../../deployments/${var.deployment}/topology.yml"))
+
+  # t-shirt size class → libvirt memory (MiB) / vCPU (see deployments/README.md).
+  size_map = {
+    small  = { memory = 4096, vcpu = 2 }
+    medium = { memory = 8192, vcpu = 2 }
+    large  = { memory = 8192, vcpu = 4 }
+    xlarge = { memory = 16384, vcpu = 4 }
+  }
+
+  # Spec role → provider role key (identity unless remapped). nl6 runs on netsim.
+  provider_role = {
+    loadgen = "netsim"
+  }
+
+  # Provider role → VM-name prefix ("<prefix>-benchmark-NN").
+  role_shortname = {
+    database   = "db", core = "core", kafka = "kafka", minion = "minion"
+    netsim     = "netsim", monitoring = "mon", elasticsearch = "es"
+    sentinel   = "sentinel", mimir = "mimir", victoriametrics = "vm"
+    clickhouse = "ch", akvorado = "akvorado", rrd = "rrd"
+  }
+
+  subnet_cidr = {
+    mgmt  = var.subnet_mgmt
+    db    = var.subnet_db
+    kafka = var.subnet_kafka
+    sim   = var.subnet_sim
+  }
+
+  # Per-subnet base IP offset per provider role; node i gets offset + i.
+  # Baseline offsets reproduce the current lab.tfvars addresses exactly.
+  ip_offset = {
+    mgmt  = { database = 4, core = 5, kafka = 6, minion = 7, monitoring = 8, netsim = 9, elasticsearch = 10, sentinel = 11, rrd = 12, mimir = 16, victoriametrics = 24, clickhouse = 40, akvorado = 41 }
+    db    = { database = 4, core = 5, elasticsearch = 6, sentinel = 8, mimir = 16, victoriametrics = 24, clickhouse = 40 }
+    kafka = { kafka = 4, core = 5, minion = 6, sentinel = 8 }
+    sim   = { minion = 5, netsim = 6, clickhouse = 10, akvorado = 11 }
+  }
+
+  named_routes = {
+    net_sim = { to = var.net_sim_cidr, via = var.net_sim_gateway }
+  }
+
+  # Expand each spec role into `count` nodes, keyed by provider role (+ -N when >1).
+  nodes = merge([
+    for srole, cfg in local.spec.roles : {
+      for i in range(try(cfg.count, 1)) :
+      "${lookup(local.provider_role, srole, srole)}${try(cfg.count, 1) > 1 ? "-${i}" : ""}" => {
+        prole = lookup(local.provider_role, srole, srole)
+        index = i
+        cfg   = cfg
+      }
+    }
+  ]...)
+
   topology = {
-    elasticsearch = {
-      vm_name = "es-benchmark-01"
-      memory  = 8192
-      vcpu    = 4
+    for key, n in local.nodes :
+    key => {
+      vm_name = "${local.role_shortname[n.prole]}-benchmark-${format("%02d", n.index + 1)}"
+      memory  = local.size_map[n.cfg.size].memory
+      vcpu    = local.size_map[n.cfg.size].vcpu
+      disk_gb = lookup(var.disk_sizes_gb, n.prole, 30)
       interfaces = [
-        { subnet = "mgmt", iface_name = "enp1s0", address = var.ip_elasticsearch, prefix = 26, gateway = local.gateway_mgmt },
-        { subnet = "db", iface_name = "enp2s0", address = var.ip_es_core, prefix = 26, gateway = null },
-      ]
-    }
-    database = {
-      vm_name = "db-benchmark-01"
-      memory  = 4096
-      vcpu    = 2
-      interfaces = [
-        { subnet = "mgmt", iface_name = "enp1s0", address = var.ip_database, prefix = 26, gateway = local.gateway_mgmt },
-        { subnet = "db", iface_name = "enp2s0", address = var.ip_database_db, prefix = 26, gateway = null },
-      ]
-    }
-    core = {
-      vm_name = "core-benchmark-01"
-      memory  = 16384
-      vcpu    = 4
-      interfaces = [
-        { subnet = "mgmt", iface_name = "enp1s0", address = var.ip_core, prefix = 26, gateway = local.gateway_mgmt },
-        { subnet = "db", iface_name = "enp2s0", address = var.ip_core_db, prefix = 26, gateway = null },
-        { subnet = "kafka", iface_name = "enp3s0", address = var.ip_core_kafka, prefix = 26, gateway = null },
-      ]
-    }
-    kafka = {
-      vm_name = "kafka-benchmark-01"
-      memory  = 4096
-      vcpu    = 2
-      interfaces = [
-        { subnet = "mgmt", iface_name = "enp1s0", address = var.ip_kafka, prefix = 26, gateway = local.gateway_mgmt },
-        { subnet = "kafka", iface_name = "enp2s0", address = var.ip_kafka_kafka, prefix = 26, gateway = null },
-      ]
-    }
-    minion = {
-      vm_name = "minion-benchmark-01"
-      memory  = 4096
-      vcpu    = 2
-      interfaces = [
-        { subnet = "mgmt", iface_name = "enp1s0", address = var.ip_minion, prefix = 26, gateway = local.gateway_mgmt },
-        { subnet = "kafka", iface_name = "enp2s0", address = var.ip_minion_kafka, prefix = 26, gateway = null },
-        { subnet = "sim", iface_name = "enp3s0", address = var.ip_minion_sim, prefix = 26, gateway = null, routes = [{ to = var.net_sim_cidr, via = var.net_sim_gateway }] },
-      ]
-    }
-    netsim = {
-      vm_name = "netsim-benchmark-01"
-      memory  = 4096
-      vcpu    = 2
-      interfaces = [
-        { subnet = "mgmt", iface_name = "enp1s0", address = var.ip_netsim, prefix = 26, gateway = local.gateway_mgmt },
-        { subnet = "sim", iface_name = "enp2s0", address = var.ip_netsim_sim, prefix = 26, gateway = null },
-      ]
-    }
-    monitoring = {
-      vm_name = "mon-benchmark-01"
-      memory  = 4096
-      vcpu    = 2
-      interfaces = [
-        { subnet = "mgmt", iface_name = "enp1s0", address = var.ip_monitoring, prefix = 26, gateway = null },
-        { subnet = "external", iface_name = "enp2s0", address = null, prefix = null, gateway = null },
+        for si, subnet in n.cfg.subnets : {
+          subnet     = subnet
+          iface_name = "enp${si + 1}s0"
+          address    = subnet == "external" ? null : cidrhost(local.subnet_cidr[subnet], local.ip_offset[subnet][n.prole] + n.index)
+          prefix     = subnet == "external" ? null : 26
+          gateway    = (subnet == "mgmt" && !try(n.cfg.public_ip, false)) ? local.gateway_mgmt : null
+          routes     = try(n.cfg.routes[subnet], null) != null ? [local.named_routes[n.cfg.routes[subnet]]] : []
+        }
       ]
     }
   }
@@ -109,7 +115,6 @@ module "compute" {
   network_sim_id      = module.network.network_sim_id
   network_mgmt_id     = module.network.network_mgmt_id
   network_external_id = module.network.network_external_id
-  disk_sizes_gb       = var.disk_sizes_gb
   topology            = local.topology
 }
 
