@@ -16,37 +16,6 @@ locals {
     sim      = var.network_sim_id
     external = var.network_external_id
   }
-
-  cloud_init_meta_data = {
-    database      = <<-EOF
-      instance-id: db-benchmark-01
-      local-hostname: db-benchmark-01
-    EOF
-    core          = <<-EOF
-      instance-id: core-benchmark-01
-      local-hostname: core-benchmark-01
-    EOF
-    kafka         = <<-EOF
-      instance-id: kafka-benchmark-01
-      local-hostname: kafka-benchmark-01
-    EOF
-    minion        = <<-EOF
-      instance-id: minion-benchmark-01
-      local-hostname: minion-benchmark-01
-    EOF
-    netsim        = <<-EOF
-      instance-id: netsim-benchmark-01
-      local-hostname: netsim-benchmark-01
-    EOF
-    monitoring    = <<-EOF
-      instance-id: mon-benchmark-01
-      local-hostname: mon-benchmark-01
-    EOF
-    elasticsearch = <<-EOF
-      instance-id: es-benchmark-01
-      local-hostname: es-benchmark-01
-    EOF
-  }
 }
 
 # Ubuntu 24.04 LTS cloud image — must be the cloud image (qcow2), NOT the server installer ISO.
@@ -91,7 +60,7 @@ resource "libvirt_volume" "os" {
     format = { type = "qcow2" }
   }
 
-  capacity      = var.disk_sizes_gb[each.key]
+  capacity      = each.value.disk_gb
   capacity_unit = "GiB"
 }
 
@@ -120,7 +89,7 @@ resource "libvirt_cloudinit_disk" "ci" {
 
   name           = "${each.value.vm_name}-cloudinit"
   user_data      = module.cloud_init[each.key].user_data
-  meta_data      = local.cloud_init_meta_data[each.key]
+  meta_data      = "instance-id: ${each.value.vm_name}\nlocal-hostname: ${each.value.vm_name}\n"
   network_config = module.cloud_init[each.key].network_config
 }
 

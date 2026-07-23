@@ -25,6 +25,13 @@ DESCRIPTOR := python3 $(DEPLOYMENTS_DIR)/bin/topology-descriptor.py
 V ?=
 # Extra args forwarded verbatim to terraform via deploy.sh (e.g. TF_ARGS="-var foo=bar").
 TF_ARGS ?=
+# Deployment slug from the library (deployments/<slug>/). Consumed by kvm today.
+DEPLOYMENT ?= baseline
+
+# The deployment var is declared only on providers wired for spec-driven topology
+# (kvm in Phase 2b); never pass it to the others. Combined with any TF_ARGS.
+_dep_tfarg = $(if $(filter kvm,$(PROVIDER)),-var deployment=$(DEPLOYMENT))
+_tfargs    = $(strip $(_dep_tfarg) $(TF_ARGS))
 
 # ── guards ────────────────────────────────────────────────────────────────────
 
@@ -54,12 +61,21 @@ endif
 # ── lifecycle (delegates to deploy.sh) ──────────────────────────────────────────
 
 .PHONY: deploy
-deploy: check-provider ## Provision + configure the lab for PROVIDER
-	./deploy.sh --provider $(PROVIDER) $(if $(TF_ARGS),--tf-args "$(TF_ARGS)") $(V)
+deploy: check-provider ## Provision + configure the lab (PROVIDER=…, kvm: DEPLOYMENT=<slug>)
+	./deploy.sh --provider $(PROVIDER) $(if $(_tfargs),--tf-args "$(_tfargs)") $(V)
 
 .PHONY: destroy
 destroy: check-provider confirm ## Tear down all lab resources for PROVIDER
-	./deploy.sh --provider $(PROVIDER) --destroy $(if $(TF_ARGS),--tf-args "$(TF_ARGS)") $(V)
+	./deploy.sh --provider $(PROVIDER) --destroy $(if $(_tfargs),--tf-args "$(_tfargs)") $(V)
+
+.PHONY: plan
+plan: check-provider ## terraform plan for PROVIDER (kvm: DEPLOYMENT=<slug>)
+	terraform -chdir=terraform/$(PROVIDER) init -input=false $(if $(filter kvm,$(PROVIDER)),-upgrade) >/dev/null
+	terraform -chdir=terraform/$(PROVIDER) plan -input=false \
+	  -var-file=../lab.tfvars \
+	  $(if $(filter kvm proxmox vmware,$(PROVIDER)),-var-file=../disk-sizes.tfvars) \
+	  -var-file=$(PROVIDER).tfvars \
+	  $(_dep_tfarg)
 
 # ── lint (mirrors .github/workflows) ────────────────────────────────────────────
 
