@@ -28,10 +28,11 @@ TF_ARGS ?=
 # Deployment slug from the library (deployments/<slug>/). Consumed by kvm today.
 DEPLOYMENT ?= baseline
 
-# The deployment var is declared only on providers wired for spec-driven topology
-# (kvm in Phase 2b); never pass it to the others. Combined with any TF_ARGS.
+# The deployment is passed to deploy.sh only for spec-driven providers (kvm),
+# which selects both the Terraform topology and the Ansible config overlay.
+_dep_flag  = $(if $(filter kvm,$(PROVIDER)),--deployment $(DEPLOYMENT))
+# `make plan` still passes the Terraform var directly (it bypasses deploy.sh).
 _dep_tfarg = $(if $(filter kvm,$(PROVIDER)),-var deployment=$(DEPLOYMENT))
-_tfargs    = $(strip $(_dep_tfarg) $(TF_ARGS))
 
 # ── guards ────────────────────────────────────────────────────────────────────
 
@@ -62,11 +63,11 @@ endif
 
 .PHONY: deploy
 deploy: check-provider ## Provision + configure the lab (PROVIDER=…, kvm: DEPLOYMENT=<slug>)
-	./deploy.sh --provider $(PROVIDER) $(if $(_tfargs),--tf-args "$(_tfargs)") $(V)
+	./deploy.sh --provider $(PROVIDER) $(_dep_flag) $(if $(TF_ARGS),--tf-args "$(TF_ARGS)") $(V)
 
 .PHONY: destroy
 destroy: check-provider confirm ## Tear down all lab resources for PROVIDER
-	./deploy.sh --provider $(PROVIDER) --destroy $(if $(_tfargs),--tf-args "$(_tfargs)") $(V)
+	./deploy.sh --provider $(PROVIDER) $(_dep_flag) --destroy $(if $(TF_ARGS),--tf-args "$(TF_ARGS)") $(V)
 
 .PHONY: plan
 plan: check-provider ## terraform plan for PROVIDER (kvm: DEPLOYMENT=<slug>)

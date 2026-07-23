@@ -1,0 +1,20 @@
+---
+# OpenNMS config overlay for the mimir-single deployment. Layered by
+# `make deploy DEPLOYMENT=mimir-single PROVIDER=kvm` as extra-vars over the base
+# opennms-lab-vars.yml.
+#
+# Sends OpenNMS metrics to Grafana Mimir through the Prometheus remote_write
+# plugin (opennms-prometheus-remotewrite-plugin). The backend host resolves via
+# /etc/hosts (topology-derived). Requires the opennms_core remote_write support
+# added in Phase 3a (collection).
+
+# Switch the time-series layer from RRD to the OSGi integration layer.
+opennms_properties_timeseries:
+  org.opennms.timeseries.strategy: integration
+
+# Prometheus remote_write plugin target (Mimir single-binary, default :8080).
+opennms_remotewrite:
+  enabled: true
+  write_url: "http://mimir-benchmark-01:8080/api/v1/push"
+  read_url: "http://mimir-benchmark-01:8080/prometheus/api/v1"
+  organization_id: ""
