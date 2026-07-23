@@ -17,7 +17,7 @@ TRIALS="${TRIALS:-6}"
 EXP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 QUERIES="$EXP_DIR/queries/queries.json"
 CORPUS_ID="$EXP_DIR/build/corpus-identity.json"
-OUT="$EXP_DIR/results/$VARIANT"
+OUT="$EXP_DIR/results/benchmark/$VARIANT"
 mkdir -p "$OUT"
 
 [ -f "$CORPUS_ID" ] || { echo "missing $CORPUS_ID — seed + reconcile first (tasks 3.x)" >&2; exit 1; }
