@@ -58,7 +58,7 @@ DEPLOYMENT=""
 while [[ $# -gt 0 ]]; do
   case $1 in
     --provider)   PROVIDER="$2"; shift 2 ;;
-    --deployment) DEPLOYMENT="$2"; shift 2 ;;
+    --deployment) DEPLOYMENT="${2:?--deployment requires a value}"; shift 2 ;;
     --destroy)    DESTROY=true; shift ;;
     --tf-args)    read -ra TF_EXTRA_ARGS <<< "$2"; shift 2 ;;
     -v|-vv|-vvv|-vvvv) ANSIBLE_VERBOSITY="$1"; shift ;;
@@ -98,7 +98,7 @@ if [[ -n "$DEPLOYMENT" && "$PROVIDER" == "kvm" ]]; then
   DEPLOYMENT_VARS=(-var "deployment=$DEPLOYMENT")
 fi
 DEPLOYMENT_VARS_FILE=""
-if [[ -n "$DEPLOYMENT" && -f "$REPO_ROOT/deployments/$DEPLOYMENT/opennms-lab-vars.yml" ]]; then
+if [[ -n "$DEPLOYMENT" && "$PROVIDER" == "kvm" && -f "$REPO_ROOT/deployments/$DEPLOYMENT/opennms-lab-vars.yml" ]]; then
   DEPLOYMENT_VARS_FILE="--extra-vars=@$REPO_ROOT/deployments/$DEPLOYMENT/opennms-lab-vars.yml"
 fi
 
