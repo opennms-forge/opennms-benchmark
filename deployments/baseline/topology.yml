@@ -1,0 +1,42 @@
+name: baseline
+description: >-
+  The current single-node lab (reference topology). One instance of each
+  component; TSDB strategy (RRD/ES) is set at the Ansible layer on core.
+roles:
+  elasticsearch:
+    count: 1
+    size: large
+    subnets: [mgmt, db]
+    groups: [elasticsearch, docker_engine]
+  database:
+    count: 1
+    size: small
+    subnets: [mgmt, db]
+    groups: [database]
+  core:
+    count: 1
+    size: xlarge
+    subnets: [mgmt, db, kafka]
+    groups: [core]
+  kafka:
+    count: 1
+    size: small
+    subnets: [mgmt, kafka]
+    groups: [message_broker, docker_engine, kafka_ui]
+  minion:
+    count: 1
+    size: small
+    subnets: [mgmt, kafka, sim]
+    routes: { sim: net_sim }
+    groups: [minion]
+  loadgen:
+    count: 1
+    size: small
+    subnets: [mgmt, sim]
+    groups: [net_sim, docker_engine]
+  monitoring:
+    count: 1
+    size: small
+    subnets: [mgmt, external]
+    public_ip: true
+    groups: [mon_servers, docker_engine, grafana]

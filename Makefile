@@ -17,6 +17,10 @@ SHELL := /usr/bin/env bash
 # Providers with a Terraform root under terraform/<provider>/.
 PROVIDERS := azure kvm proxmox vmware
 
+# Deployment library — provider-agnostic topology specs under deployments/<slug>/.
+DEPLOYMENTS_DIR := deployments
+DESCRIPTOR := python3 $(DEPLOYMENTS_DIR)/bin/topology-descriptor.py
+
 # Ansible verbosity passthrough (e.g. V=-vvv).
 V ?=
 # Extra args forwarded verbatim to terraform via deploy.sh (e.g. TF_ARGS="-var foo=bar").
@@ -96,6 +100,27 @@ lint: fmt validate tflint lint-ansible ## Run all lint checks
 .PHONY: providers
 providers: ## List available providers
 	@echo "$(PROVIDERS)"
+
+# ── deployment library ──────────────────────────────────────────────────────────
+
+.PHONY: deployments
+deployments: ## List deployments and their canonical descriptors
+	@for f in $(DEPLOYMENTS_DIR)/*/topology.yml; do \
+	  slug=$$(basename $$(dirname $$f)); \
+	  printf "  \033[36m%-22s\033[0m %s\n" "$$slug" "$$($(DESCRIPTOR) $$f 2>/dev/null)"; \
+	done
+
+.PHONY: deployment
+deployment: guard-DEPLOYMENT ## Show + validate one deployment spec (DEPLOYMENT=<slug>)
+	@f="$(DEPLOYMENTS_DIR)/$(DEPLOYMENT)/topology.yml"; \
+	[ -f "$$f" ] || { echo "Error: no such deployment '$(DEPLOYMENT)' ($$f not found)" >&2; exit 1; }; \
+	$(DESCRIPTOR) --validate "$$f" && echo && cat "$$f"
+
+.PHONY: validate-deployments
+validate-deployments: ## Validate every deployment spec against the schema
+	@rc=0; for f in $(DEPLOYMENTS_DIR)/*/topology.yml; do \
+	  $(DESCRIPTOR) --validate "$$f" >/dev/null || { $(DESCRIPTOR) --validate "$$f"; rc=1; }; \
+	done; [ $$rc -eq 0 ] && echo "all deployment specs valid" || exit $$rc
 
 .PHONY: help
 help: ## Show this help

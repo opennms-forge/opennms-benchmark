@@ -1,0 +1,17 @@
+name: clickhouse-akvorado
+description: >-
+  Deployment H — standalone flow-engine comparison: 1 ClickHouse, 1 Akvorado.
+  No OpenNMS components; Akvorado ships its own console/UI, so no separate
+  monitoring VM.
+roles:
+  clickhouse:
+    count: 1
+    size: large
+    subnets: [mgmt, sim]
+    groups: [clickhouse, docker_engine]
+  akvorado:
+    count: 1
+    size: medium
+    subnets: [mgmt, sim]
+    public_ip: true
+    groups: [akvorado, docker_engine]
