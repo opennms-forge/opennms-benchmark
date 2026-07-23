@@ -1,0 +1,36 @@
+all:
+  vars:
+    ansible_user: ${admin_user}
+    ansible_ssh_private_key_file: ${ssh_key_path}
+    ansible_python_interpreter: /usr/bin/python3
+%{ if jump_host != "" ~}
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -W %h:%p ${admin_user}@${jump_host}"'
+%{ endif ~}
+  hosts:
+%{ for hostname in sort(keys(hosts)) ~}
+    ${hostname}:
+%{ if hostname == jump_host_name && jump_host != "" ~}
+      ansible_host: ${jump_host}
+      ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+%{ else ~}
+      ansible_host: ${hosts[hostname].ansible_host}
+%{ endif ~}
+%{ for k in sort(keys(hosts[hostname].host_vars)) ~}
+      ${k}: "${hosts[hostname].host_vars[k]}"
+%{ endfor ~}
+%{ endfor ~}
+  children:
+%{ for group in sort(keys(group_members)) ~}
+    ${group}:
+      hosts:
+%{ for hostname in group_members[group] ~}
+        ${hostname}:
+%{ endfor ~}
+%{ endfor ~}
+%{ for parent in sort(keys(parent_groups)) ~}
+    ${parent}:
+      children:
+%{ for child in parent_groups[parent] ~}
+        ${child}:
+%{ endfor ~}
+%{ endfor ~}

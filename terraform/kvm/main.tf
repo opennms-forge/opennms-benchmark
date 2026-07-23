@@ -1,13 +1,7 @@
 locals {
-  hosts = {
-    "db-benchmark-01"     = var.ip_database
-    "core-benchmark-01"   = var.ip_core
-    "kafka-benchmark-01"  = var.ip_kafka
-    "minion-benchmark-01" = var.ip_minion
-    "netsim-benchmark-01" = var.ip_netsim
-    "mon-benchmark-01"    = var.ip_monitoring
-    "es-benchmark-01"     = var.ip_elasticsearch
-  }
+  # /etc/hosts map (hostname -> mgmt IP) for cloud-init, derived from the topology
+  # below so it matches whatever deployment is selected.
+  hosts = { for h, v in local.inv_hosts : h => v.ansible_host }
 
   # Default route for lab VMs is the mgmt network gateway (.1 of subnet_mgmt).
   # The monitoring VM is the exception: it routes out via its DHCP external NIC.
@@ -90,6 +84,33 @@ locals {
       ]
     }
   }
+
+  # ── inventory data derived from the topology ──────────────────────────────
+  # hostname -> ansible_host (mgmt IP), inventory groups, and host vars.
+  inv_hosts = {
+    for key, n in local.nodes :
+    local.topology[key].vm_name => {
+      # mgmt NIC address; "" if a role has no mgmt subnet (caught by the inventory
+      # module precondition with a clear message rather than a cryptic index error).
+      ansible_host = try([for i in local.topology[key].interfaces : i.address if i.subnet == "mgmt"][0], "")
+      groups       = try(n.cfg.groups, [])
+      # nl6 runs on the netsim host; expose its sim NIC name for the generator.
+      host_vars = n.prole == "netsim" ? {
+        nl6_net_interface = try([for i in local.topology[key].interfaces : i.iface_name if i.subnet == "sim"][0], "")
+      } : {}
+    }
+  }
+
+  # The jump host is the public_ip node (its external DHCP IP is var.jump_host).
+  # one() errors if a spec marks more than one node public_ip; null if none.
+  jump_node_key  = one([for key, n in local.nodes : key if try(n.cfg.public_ip, false)])
+  jump_host_name = local.jump_node_key != null ? local.topology[local.jump_node_key].vm_name : ""
+
+  # Canonical opennms_stack membership. TSDB/flow backends (mimir, victoriametrics,
+  # clickhouse, akvorado) are intentionally excluded — OpenNMS writes to them; they
+  # are not orchestrated as part of the stack group. Children absent from the
+  # selected deployment are dropped by the inventory module.
+  onms_stack_children = ["database", "core", "message_broker", "elasticsearch", "minion", "sentinel", "grafana"]
 }
 
 module "network" {
@@ -147,17 +168,12 @@ module "diagram" {
 }
 
 module "inventory" {
-  source = "../modules/inventory"
+  source = "../modules/topology-inventory"
 
-  ip_database          = var.ip_database
-  ip_core              = var.ip_core
-  ip_kafka             = var.ip_kafka
-  ip_minion            = var.ip_minion
-  ip_netsim            = var.ip_netsim
-  ip_monitoring        = var.ip_monitoring
-  ip_elasticsearch     = var.ip_elasticsearch
-  admin_user           = var.admin_user
-  ssh_key_path         = var.ssh_key_path
-  jump_host            = var.jump_host
-  netsim_sim_interface = "enp2s0"
+  hosts          = local.inv_hosts
+  admin_user     = var.admin_user
+  ssh_key_path   = var.ssh_key_path
+  jump_host      = var.jump_host
+  jump_host_name = local.jump_host_name
+  parent_groups  = { opennms_stack = local.onms_stack_children }
 }
