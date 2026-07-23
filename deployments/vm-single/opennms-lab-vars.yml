@@ -1,0 +1,20 @@
+---
+# OpenNMS config overlay for the vm-single deployment. Layered by
+# `make deploy DEPLOYMENT=vm-single PROVIDER=kvm` as extra-vars over the base
+# opennms-lab-vars.yml.
+#
+# Sends OpenNMS metrics to VictoriaMetrics through the SAME Prometheus
+# remote_write plugin used for Mimir — only the URL differs. The backend host
+# resolves via /etc/hosts (topology-derived). Requires the opennms_core
+# remote_write support added in Phase 3a (collection).
+
+# Switch the time-series layer from RRD to the OSGi integration layer.
+opennms_properties_timeseries:
+  org.opennms.timeseries.strategy: integration
+
+# Prometheus remote_write plugin target (VictoriaMetrics single-node, :8428).
+opennms_remotewrite:
+  enabled: true
+  write_url: "http://vm-benchmark-01:8428/api/v1/write"
+  read_url: "http://vm-benchmark-01:8428/prometheus/api/v1"
+  organization_id: ""

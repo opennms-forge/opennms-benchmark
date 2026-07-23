@@ -20,15 +20,17 @@ usage() {
 Usage: $0 --provider <azure|kvm|proxmox|vmware> [OPTIONS]
 
 Options:
-  --provider  <azure|kvm|proxmox|vmware>   Target infrastructure provider (required)
+  --provider   <azure|kvm|proxmox|vmware>  Target infrastructure provider (required)
+  --deployment <slug>               Deployment topology from deployments/<slug>/ (kvm; default baseline)
   --destroy                         Tear down all lab resources
-  --tf-args   "<args>"              Extra arguments passed verbatim to terraform
+  --tf-args    "<args>"             Extra arguments passed verbatim to terraform
   -v|-vv|-vvv|-vvvv                 Ansible verbosity
   -h|--help                         Show this message
 
 Examples:
   $0 --provider azure
   $0 --provider kvm
+  $0 --provider kvm --deployment mimir-single
   $0 --provider proxmox
   $0 --provider vmware
   $0 --provider azure --destroy
@@ -51,14 +53,16 @@ PROVIDER=""
 DESTROY=false
 TF_EXTRA_ARGS=()
 ANSIBLE_VERBOSITY=""
+DEPLOYMENT=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --provider) PROVIDER="$2"; shift 2 ;;
-    --destroy)  DESTROY=true; shift ;;
-    --tf-args)  read -ra TF_EXTRA_ARGS <<< "$2"; shift 2 ;;
+    --provider)   PROVIDER="$2"; shift 2 ;;
+    --deployment) DEPLOYMENT="${2:?--deployment requires a value}"; shift 2 ;;
+    --destroy)    DESTROY=true; shift ;;
+    --tf-args)    read -ra TF_EXTRA_ARGS <<< "$2"; shift 2 ;;
     -v|-vv|-vvv|-vvvv) ANSIBLE_VERBOSITY="$1"; shift ;;
-    -h|--help)  usage; exit 0 ;;
+    -h|--help)    usage; exit 0 ;;
     *) echo "Error: unknown option: $1" >&2; error_usage ;;
   esac
 done
@@ -84,6 +88,18 @@ if [[ ! -f "$TFVARS_FILE" ]]; then
   echo "Error: $TFVARS_FILE not found." >&2
   echo "       Copy ${TFVARS_FILE}.example → $TFVARS_FILE and fill in your values." >&2
   exit 1
+fi
+
+# Deployment selection: the `deployment` Terraform variable is declared only on
+# spec-driven providers (kvm today). The matching Ansible config overlay
+# (deployments/<slug>/opennms-lab-vars.yml) is layered onto the OpenNMS play.
+DEPLOYMENT_VARS=()
+if [[ -n "$DEPLOYMENT" && "$PROVIDER" == "kvm" ]]; then
+  DEPLOYMENT_VARS=(-var "deployment=$DEPLOYMENT")
+fi
+DEPLOYMENT_VARS_FILE=""
+if [[ -n "$DEPLOYMENT" && "$PROVIDER" == "kvm" && -f "$REPO_ROOT/deployments/$DEPLOYMENT/opennms-lab-vars.yml" ]]; then
+  DEPLOYMENT_VARS_FILE="--extra-vars=@$REPO_ROOT/deployments/$DEPLOYMENT/opennms-lab-vars.yml"
 fi
 
 # ── provider-specific extra vars ──────────────────────────────────────────────
@@ -140,6 +156,7 @@ tf_apply() {
   terraform -chdir="$TF_DIR" apply \
     "${COMMON_VAR_FILES[@]}" \
     -var-file="${PROVIDER}.tfvars" \
+    "${DEPLOYMENT_VARS[@]+"${DEPLOYMENT_VARS[@]}"}" \
     "$@" \
     "${TF_EXTRA_ARGS[@]+"${TF_EXTRA_ARGS[@]}"}" \
     -input=false \
@@ -150,6 +167,7 @@ tf_destroy() {
   terraform -chdir="$TF_DIR" destroy \
     "${COMMON_VAR_FILES[@]}" \
     -var-file="${PROVIDER}.tfvars" \
+    "${DEPLOYMENT_VARS[@]+"${DEPLOYMENT_VARS[@]}"}" \
     "$@" \
     "${TF_EXTRA_ARGS[@]+"${TF_EXTRA_ARGS[@]}"}" \
     -input=false \
@@ -230,4 +248,5 @@ ansible-playbook \
   -i "$REPO_ROOT/ansible-inventory.yml" \
   $ANSIBLE_VERBOSITY \
   "$REPO_ROOT/opennms-playbook.yml" \
-  --extra-vars="@$REPO_ROOT/opennms-lab-vars.yml"
+  --extra-vars="@$REPO_ROOT/opennms-lab-vars.yml" \
+  $DEPLOYMENT_VARS_FILE
