@@ -5,7 +5,9 @@ on:
   pull_request:
     paths:
       - "terraform/**"
+      - "Makefile"
 
+# CI invokes Makefile targets, never terraform directly, so local and CI stay in sync.
 jobs:
   fmt:
     name: Format Check
@@ -17,8 +19,8 @@ jobs:
         with:
           terraform_version: "~1.5"
 
-      - name: terraform fmt
-        run: terraform fmt -check -recursive terraform/
+      - name: make fmt
+        run: make fmt
 
   validate-azure:
     name: Validate (Azure)
@@ -30,13 +32,8 @@ jobs:
         with:
           terraform_version: "~1.5"
 
-      - name: terraform init
-        run: terraform init -backend=false
-        working-directory: terraform/azure
-
-      - name: terraform validate
-        run: terraform validate
-        working-directory: terraform/azure
+      - name: make validate-azure
+        run: make validate-azure
 
   validate-kvm:
     name: Validate (KVM)
@@ -48,16 +45,10 @@ jobs:
         with:
           terraform_version: "~1.5"
 
-      - name: terraform init
-        # -upgrade forces provider download; libvirt provider is a community
-        # provider from dmacvicar/libvirt and installs without a running host
-        run: terraform init -backend=false -upgrade
-        working-directory: terraform/kvm
-
-      - name: terraform validate
-        # validate checks syntax and type correctness only — no provider API calls
-        run: terraform validate
-        working-directory: terraform/kvm
+      # The Makefile passes -upgrade on kvm init so the community dmacvicar/libvirt
+      # provider downloads; validate then checks syntax/types only (no host needed).
+      - name: make validate-kvm
+        run: make validate-kvm
 
   validate-proxmox:
     name: Validate (Proxmox)
@@ -69,15 +60,8 @@ jobs:
         with:
           terraform_version: "~1.5"
 
-      - name: terraform init
-        # bpg/proxmox is a community provider and installs without a running host
-        run: terraform init -backend=false
-        working-directory: terraform/proxmox
-
-      - name: terraform validate
-        # validate checks syntax and type correctness only — no provider API calls
-        run: terraform validate
-        working-directory: terraform/proxmox
+      - name: make validate-proxmox
+        run: make validate-proxmox
 
   validate-vmware:
     name: Validate (VMware)
@@ -89,15 +73,8 @@ jobs:
         with:
           terraform_version: "~1.5"
 
-      - name: terraform init
-        # hashicorp/vsphere is a HashiCorp-maintained provider and installs without a running host
-        run: terraform init -backend=false
-        working-directory: terraform/vmware
-
-      - name: terraform validate
-        # validate checks syntax and type correctness only — no provider API calls
-        run: terraform validate
-        working-directory: terraform/vmware
+      - name: make validate-vmware
+        run: make validate-vmware
 
   tflint:
     name: TFLint
@@ -109,42 +86,7 @@ jobs:
         with:
           tflint_version: latest
 
-      - name: Init TFLint (Azure)
-        run: tflint --init
-        working-directory: terraform/azure
+      - name: make tflint
+        run: make tflint
         env:
           GITHUB_TOKEN: ${{ github.token }}
-
-      - name: TFLint (Azure)
-        run: tflint --recursive --minimum-failure-severity=error
-        working-directory: terraform/azure
-
-      - name: Init TFLint (KVM)
-        run: tflint --init
-        working-directory: terraform/kvm
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: TFLint (KVM)
-        run: tflint --recursive --minimum-failure-severity=error
-        working-directory: terraform/kvm
-
-      - name: Init TFLint (Proxmox)
-        run: tflint --init
-        working-directory: terraform/proxmox
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: TFLint (Proxmox)
-        run: tflint --recursive --minimum-failure-severity=error
-        working-directory: terraform/proxmox
-
-      - name: Init TFLint (VMware)
-        run: tflint --init
-        working-directory: terraform/vmware
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: TFLint (VMware)
-        run: tflint --recursive --minimum-failure-severity=error
-        working-directory: terraform/vmware
