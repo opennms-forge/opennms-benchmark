@@ -13,8 +13,10 @@ opennms_properties_timeseries:
   org.opennms.timeseries.strategy: integration
 
 # Prometheus remote_write plugin target (Mimir single-binary, default :8080).
+# Mimir runs with multitenancy enabled by default, so it requires an
+# X-Scope-OrgID header — organization_id sets it (writes/reads/Grafana must match).
 opennms_remotewrite:
   enabled: true
   write_url: "http://mimir-benchmark-01:8080/api/v1/push"
   read_url: "http://mimir-benchmark-01:8080/prometheus/api/v1"
-  organization_id: ""
+  organization_id: "opennms"
