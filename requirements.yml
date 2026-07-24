@@ -9,7 +9,7 @@ collections:
   # update only via a deliberate PR, never automatically.
   - name: https://github.com/opennms-forge/ansible-opennms.git
     type: git
-    version: 286d031cdc5237b0d6c3f91b65ec3f0845b393ef  # v0.4.7
+    version: e4c19a0af99bccf632069d224b4ba09d5d21e8db  # v0.5.0
 
   # Transitive collections used by the OpenNMS deployment roles. Pinned by
   # Galaxy version string (weaker than SHA pinning, matches the prior
