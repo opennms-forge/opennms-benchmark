@@ -3,8 +3,31 @@
   ansible.builtin.apt:
     update_cache: true
 
+# The lab pins some package versions, and a dist upgrade would move them past
+# that pin — the next pinned install then reads as a downgrade, apt refuses it,
+# and the deploy dies before OpenNMS Core (#141). Hold those packages for the
+# duration of the upgrade only; releasing afterwards keeps deliberate version
+# bumps working normally.
+- name: Gather installed packages
+  ansible.builtin.package_facts:
+    manager: apt
+
+- name: Hold lab-pinned packages across the distribution upgrade
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop: "{{ apt_update_pinned_packages }}"
+  when: item in ansible_facts.packages
+
 - name: Update all packages to the latest version
   ansible.builtin.apt:
     upgrade: dist
     autoclean: true
     autoremove: true
+
+- name: Release the hold on lab-pinned packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: install
+  loop: "{{ apt_update_pinned_packages }}"
+  when: item in ansible_facts.packages
