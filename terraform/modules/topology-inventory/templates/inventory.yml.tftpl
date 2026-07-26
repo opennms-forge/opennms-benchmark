@@ -15,6 +15,7 @@ all:
 %{ else ~}
       ansible_host: ${hosts[hostname].ansible_host}
 %{ endif ~}
+      lab_mgmt_ip: ${hosts[hostname].ansible_host}
 %{ for k in sort(keys(hosts[hostname].host_vars)) ~}
       ${k}: "${hosts[hostname].host_vars[k]}"
 %{ endfor ~}

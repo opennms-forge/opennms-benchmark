@@ -21,6 +21,7 @@
   hosts: all
   become: true
   roles:
+    - etc_hosts
     - apt_update
     - common
     - prometheus.prometheus.node_exporter
