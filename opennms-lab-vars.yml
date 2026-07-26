@@ -27,11 +27,13 @@ opennms_es_port: 9200
 # Pinned to a Grafana 12.x release so the stock grafana.grafana 6.1.0 collection
 # works as-is. Grafana 13 needs a grafana-cli --homepath fix for plugin installs
 # that only exists in a non-Galaxy hotfix build (see requirements.yml).
-# NOTE: this is the apt package version. Grafana's download pages call this
-# release "12.4.3+security-02", but apt.grafana.com encodes it as "12.4.3-02" —
-# the "+security" form matches nothing and apt fails with
-# "no available installation candidate".
-grafana_version: "12.4.3-02"
+# NOTE: this is the apt package version. Security releases are encoded with a
+# "-NN" suffix (Grafana's download pages call them "+security-NN", which matches
+# nothing in apt); plain releases carry no suffix. Keep this at the head of the
+# 12.x line — a pin below it is a downgrade on hosts that already have a newer
+# Grafana, and apt then refuses with "Packages were downgraded and -y was used
+# without --allow-downgrades" (see #137).
+grafana_version: "12.4.6"
 # Datasources are provisioned by bootstrap/roles/grafana via files.
 # Empty list overrides the submodule's group_vars (which the collection
 # would otherwise use to call its datasource module — rejecting plugin types).
