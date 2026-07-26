@@ -1,0 +1,22 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# Packages this lab installs at an exact or patch-level version. `upgrade: dist`
+# would move them past that pin, making the next pinned install a downgrade that
+# apt refuses (#141).
+#
+#   grafana        -> grafana_version in opennms-lab-vars.yml (exact, e.g. 12.4.6)
+#   opennms-*      -> opennms_pkg_version, "36.0.2*" (patch level)
+#
+# jrrd2, rrdtool and iplike are deliberately absent: they pin a major version
+# ("1.*"), so an upgrade still satisfies the pin.
+#
+# Kept in sync by hand. A missing entry restores the old drift, which surfaces as
+# the "Packages were downgraded" abort in #141 rather than failing silently.
+apt_update_pinned_packages:
+  - grafana
+  - opennms-common
+  - opennms-server
+  - opennms-webapp-jetty
+  - opennms-webapp-hawtio
