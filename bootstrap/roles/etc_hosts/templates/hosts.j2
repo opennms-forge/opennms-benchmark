@@ -1,0 +1,14 @@
+{# Copyright 2026 Ronny Trommer <ronny@no42.org> #}
+{# SPDX-License-Identifier: Apache-2.0 #}
+{# Mirrors the /etc/hosts written by                                        #}
+{# terraform/modules/cloud-init/templates/user-data.yaml.tftpl, which only  #}
+{# runs on first boot. Keep the two in sync.                                #}
+{# lab_mgmt_ip, not ansible_host: the inventory overrides ansible_host with #}
+{# the external DHCP address on the jump host.                              #}
+127.0.0.1 localhost
+127.0.1.1 {{ inventory_hostname }}
+{% for host in groups['all'] | sort %}
+{% if hostvars[host].lab_mgmt_ip is defined %}
+{{ hostvars[host].lab_mgmt_ip }} {{ host }} {{ host }}.lab.local
+{% endif %}
+{% endfor %}

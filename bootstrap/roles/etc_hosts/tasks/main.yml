@@ -1,0 +1,21 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# cloud-init writes /etc/hosts once, on first boot. A VM that keeps its
+# for_each key across a topology swap is not recreated, so it holds the host
+# table of the previous topology and cannot resolve the new hosts. Re-render
+# the file on every run so it converges like the rest of the config.
+#
+# lab_mgmt_ip is emitted by terraform/modules/topology-inventory. Providers
+# still on the legacy inventory module do not set it; they also have a fixed
+# topology and cannot hit the swap problem, so the task skips there.
+- name: Refresh /etc/hosts from the inventory topology
+  ansible.builtin.template:
+    src: hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: "0644"
+  when: lab_mgmt_ip is defined
+  tags: ["etc-hosts"]
