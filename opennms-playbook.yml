@@ -27,6 +27,13 @@
     - indigo423.opennms.common
     - indigo423.opennms.stub_mimir
 
+- name: Manage VictoriaMetrics
+  hosts: victoriametrics
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - indigo423.opennms.stub_victoriametrics
+
 - name: Manage Grafana
   hosts: grafana
   become: true
