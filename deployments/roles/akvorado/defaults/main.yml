@@ -6,21 +6,23 @@ akvorado_version: "2.4.1"
 akvorado_src_url: "https://github.com/akvorado/akvorado/archive/refs/tags/v{{ akvorado_version }}.tar.gz"
 akvorado_install_dir: /opt/akvorado
 
-# Upstream keeps its compose files under docker/ and chains them through
-# COMPOSE_FILE in the shipped .env. The docker CLI reads that; the Ansible
-# module does not — it looks for a compose file directly in project_src and
-# fails before invoking docker — so the chain is listed explicitly here.
-# Mirrors the active (uncommented) COMPOSE_FILE entries in .env for the pinned
-# akvorado_version; re-check it when bumping the version. Order matters:
-# later files override earlier ones, so the local override must stay last.
+# Upstream chains its compose files through COMPOSE_FILE in the root .env. The
+# docker CLI reads that; the Ansible module does not — it looks for a compose
+# file directly in its project directory — so the chain is listed explicitly.
+# Paths are relative to docker/, which is the compose project directory here;
+# see vars/main.yml for why.
+#
+# Mirrors the active (uncommented) COMPOSE_FILE entries in the root .env for
+# the pinned akvorado_version; re-check when bumping it. Order matters: later
+# files override earlier ones, so the local override must stay last.
 akvorado_compose_files:
-  - docker/docker-compose.yml
-  - docker/docker-compose-ipinfo.yml
-  - docker/docker-compose-prometheus.yml
-  - docker/docker-compose-loki.yml
-  - docker/docker-compose-grafana.yml
-  - docker/docker-compose-demo.yml
-  - docker/docker-compose-local.yml
+  - docker-compose.yml
+  - docker-compose-ipinfo.yml
+  - docker-compose-prometheus.yml
+  - docker-compose-loki.yml
+  - docker-compose-grafana.yml
+  - docker-compose-demo.yml
+  - docker-compose-local.yml
 
 # Where the flow schema lives. Required — the bundled ClickHouse container is
 # disabled (see templates/docker-compose-local.yml.j2) so that a dedicated
