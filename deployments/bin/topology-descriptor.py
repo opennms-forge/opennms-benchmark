@@ -24,10 +24,16 @@ ROLE_CODES = {
     "victoriametrics": "vm",
     "clickhouse": "ch",
     "akvorado": "ak",
+    "rustfs": "rs",
     "loadgen": "nl6",
 }
+# Roles that are infrastructure rather than components under test, and are
+# deliberately absent from the descriptor. Anything not here and not in
+# ROLE_CODES is an error: silently dropping it would let two different
+# topologies share a fingerprint.
+EXCLUDED_ROLES = {"monitoring"}
 # Fixed emit order for a stable, comparable descriptor.
-ORDER = ["es", "mm", "vm", "ch", "ak", "rr", "pg", "sn", "kf", "on", "mn", "nl6"]
+ORDER = ["es", "mm", "vm", "ch", "ak", "rs", "rr", "pg", "sn", "kf", "on", "mn", "nl6"]
 KNOWN_SIZES = {"small", "medium", "large", "xlarge"}
 KNOWN_SUBNETS = {"mgmt", "db", "kafka", "sim", "external"}
 
@@ -44,9 +50,15 @@ def _load(path):
 def descriptor(spec):
     counts = {}
     for role, cfg in (spec.get("roles") or {}).items():
-        code = ROLE_CODES.get(role)
-        if code is None:  # monitoring / unknown -> not in descriptor
+        if role in EXCLUDED_ROLES:
             continue
+        code = ROLE_CODES.get(role)
+        if code is None:
+            raise SystemExit(
+                f"unknown role '{role}': add it to ROLE_CODES (and ORDER) or to "
+                "EXCLUDED_ROLES. Skipping it silently would drop a component "
+                "from the descriptor that is meant to identify the topology."
+            )
         n = int(cfg.get("count", 1))
         if n > 0:
             counts[code] = counts.get(code, 0) + n

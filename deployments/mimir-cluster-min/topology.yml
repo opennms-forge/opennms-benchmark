@@ -1,0 +1,25 @@
+name: mimir-cluster-min
+description: >-
+  Component test bed — Mimir cluster formation against shared object storage.
+  Not an A–H benchmark topology: it verifies stub_mimir's distributed mode and
+  the rustfs role on a footprint that fits the lab hypervisor (36 GB), because
+  Deployment A needs 132 GB and cannot run there.
+roles:
+  mimir:
+    count: 3
+    size: large
+    # Mirrors Deployment A: Mimir reaches storage over the db subnet.
+    subnets: [mgmt, db]
+    groups: [mimir]
+  rustfs:
+    count: 1
+    size: medium
+    subnets: [mgmt, db]
+    groups: [rustfs]
+  # Jump host only — see es-cluster-min for why every kvm deployment needs one.
+  monitoring:
+    count: 1
+    size: small
+    subnets: [mgmt, external]
+    public_ip: true
+    groups: []

@@ -113,6 +113,7 @@ Descriptor component order: `es mm vm ch ak rr pg sn kf on mn nl6`.
 | `clickhouse-akvorado` (H) | `1ch-1ak` | standalone flow-engine (no OpenNMS) |
 | `es-cluster-min` | `3es` | **component test bed**, not A–H — verifies Elasticsearch cluster formation on a footprint that fits the lab (28 GB) |
 | `kafka-cluster-min` | `3kf` | **component test bed**, not A–H — verifies KRaft cluster formation (shared cluster ID, quorum, RF 3) at 28 GB |
+| `mimir-cluster-min` | `3mm-1rs` | **component test bed**, not A–H — verifies Mimir cluster formation against shared object storage at 36 GB |
 
 **Interpretation notes:** B lists RRDTool without a Core, but RRD is a Core
 storage strategy, so `baseline`/B include `core` with the RRD strategy set at the
