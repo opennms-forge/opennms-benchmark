@@ -117,6 +117,25 @@ resource "libvirt_domain" "vm" {
   memory_unit = "MiB"
   vcpu        = each.value.vcpu
 
+  # Without this libvirt defaults to the qemu64 model: an x86-64 baseline CPU
+  # with no SSE4.2, AVX or AVX2. Two consequences, both bad for this lab.
+  #
+  # ClickHouse requires SSE4.2 and dies at package configuration time with
+  # "Illegal instruction (core dumped)" — Deployment H cannot install at all.
+  #
+  # More quietly, every number this lab has ever produced was measured on a
+  # CPU without vector instructions. JVM intrinsics, Kafka and Elasticsearch
+  # compression and checksums, and the TSDB engines all lean on SSE4.2/AVX2,
+  # so results were systematically unrepresentative of the hardware anyone
+  # actually runs on — the opposite of what a benchmark lab is for.
+  #
+  # host-passthrough rather than host-model: this is a single-hypervisor lab
+  # with no live migration to preserve, so exposing the host CPU exactly is
+  # both the fastest and the most faithful option.
+  cpu = {
+    mode = "host-passthrough"
+  }
+
   os = {
     type         = "hvm"
     type_arch    = "x86_64"
