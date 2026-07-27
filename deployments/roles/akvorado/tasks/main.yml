@@ -1,14 +1,21 @@
 ---
 # Copyright 2026 Ronny Trommer <ronny@no42.org>
 # SPDX-License-Identifier: Apache-2.0
-- name: Assert an external ClickHouse is configured
+- name: Assert the external ClickHouse and orchestrator address are configured
   ansible.builtin.assert:
     that:
       - akvorado_clickhouse_servers | length > 0
+      - akvorado_orchestrator_host | length > 0
     fail_msg: >-
-      akvorado_clickhouse_servers is empty. The bundled ClickHouse container is
-      disabled, so Akvorado has nowhere to write flows. Set it to the
-      clickhouse host, e.g. ["ch-benchmark-01:9000"].
+      akvorado_clickhouse_servers and akvorado_orchestrator_host must both be
+      set. This role always disables the bundled ClickHouse container, so
+      ClickHouse is always external: it needs somewhere to write flows
+      (by IP, e.g. ["192.0.2.232:9000"] — container DNS cannot see the host's
+      /etc/hosts) and an orchestrator address it can reach to load its
+      dictionaries. akvorado_orchestrator_host defaults to the inventory's
+      lab_mgmt_ip, which only the spec-driven topology-inventory module emits;
+      on an inventory without it, set it explicitly rather than silently
+      rendering a compose-internal URL that ClickHouse cannot resolve.
   # always, not the role tag: a --tags docker or --tags configuration run would
   # otherwise skip the guard and still template the config and start the stack,
   # which is exactly the confusing failure this assert exists to prevent.

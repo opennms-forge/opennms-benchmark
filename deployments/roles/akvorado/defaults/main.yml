@@ -17,6 +17,22 @@ akvorado_install_dir: /opt/akvorado
 # Example: ["192.0.2.232:9000"]
 akvorado_clickhouse_servers: []
 
+# ClickHouse fetches Akvorado's dictionaries (asns, networks, protocols, ports)
+# over HTTP, from CREATE DICTIONARY ... SOURCE(HTTP(...)) pointed at the
+# orchestrator. Upstream addresses it as http://akvorado-orchestrator:8080,
+# which only resolves inside the compose network — an external ClickHouse
+# cannot reach it, and Traefik's :8080 entrypoint is loopback-bound. So the
+# orchestrator is published on the host's management address instead.
+#
+# Defaults to the inventory's lab_mgmt_ip: management, never the jump host's
+# external DHCP address, so the unauthenticated orchestrator API stays off the
+# public interface. Required — the role asserts it, because ClickHouse is
+# always external here and a compose-internal URL it cannot resolve would only
+# surface later as dictionaries that silently never load. Only the spec-driven
+# topology-inventory module emits lab_mgmt_ip; elsewhere, set this explicitly.
+akvorado_orchestrator_host: "{{ lab_mgmt_ip | default('') }}"
+akvorado_orchestrator_port: 8090
+
 # Kafka stays inside the compose stack: Akvorado uses it as its own inlet ->
 # outlet buffer, not as a shared lab broker.
 akvorado_kafka_brokers:

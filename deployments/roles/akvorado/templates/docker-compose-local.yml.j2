@@ -13,6 +13,13 @@ services:
   clickhouse:
     profiles: [disabled]
 
+  # Published so the external ClickHouse can fetch dictionaries from it.
+  # Bound to the management address rather than 0.0.0.0: this node is the
+  # deployment's jump host, and the orchestrator API is unauthenticated.
+  akvorado-orchestrator:
+    ports:
+      - {{ akvorado_orchestrator_host }}:{{ akvorado_orchestrator_port }}:8080/tcp
+
   akvorado-console:
     depends_on: !override
       akvorado-orchestrator:

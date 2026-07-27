@@ -33,7 +33,12 @@ clickhousedb:
 {% endfor %}
 
 clickhouse:
-  orchestrator-url: http://akvorado-orchestrator:8080
+{# ClickHouse dereferences orchestrator-url itself to load dictionaries, so it #}
+{# must be reachable from the ClickHouse host, not a compose-internal name.    #}
+{# Keep these tags at column 0: Ansible templates with trim_blocks but not     #}
+{# lstrip_blocks, so leading whitespace on a comment line survives into the    #}
+{# output and would corrupt the indentation of the block below.                #}
+  orchestrator-url: http://{{ akvorado_orchestrator_host }}:{{ akvorado_orchestrator_port }}
   prometheus-endpoint: /metrics
 {% if akvorado_networks %}
   networks:
