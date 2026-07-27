@@ -147,7 +147,7 @@ discover_jump_host() {
       'ip -4 addr | grep inet | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}" | grep -v "^192\.0\.2\.\|^127\."' \
       2>/dev/null | head -1 || true)
     [[ -n "$jump_host" ]] && break
-    info "waiting for external IP on monitoring VM... ($i/24)" >&2
+    info "waiting for external IP on jump host... ($i/24)" >&2
     sleep 5
   done
   echo "$jump_host"
@@ -208,7 +208,14 @@ tf_apply "${PROVIDER_VARS[@]+"${PROVIDER_VARS[@]}"}"
 # after boot and cannot be known at plan time.  Discover it via SSH through the
 # hypervisor, then re-apply to regenerate the Ansible inventory with ProxyJump.
 if [[ "$PROVIDER" == "kvm" || "$PROVIDER" == "proxmox" || "$PROVIDER" == "vmware" ]]; then
-  IP_MONITORING=$(tf_output ip_monitoring)
+  # Prefer the topology-derived jump host. ip_monitoring is a static tfvars
+  # value and reports the monitoring VM's address even for a deployment that
+  # provisions none — probing it there just times out for two minutes and
+  # leaves the inventory without a ProxyCommand. Only the spec-driven kvm root
+  # exposes ip_jump_host; the others still have a fixed layout where the
+  # monitoring VM is always the jump host.
+  IP_JUMP_HOST=$(tf_output ip_jump_host)
+  [[ -z "$IP_JUMP_HOST" ]] && IP_JUMP_HOST=$(tf_output ip_monitoring)
   ADMIN_USER=$(tf_output admin_user)
 
   if [[ "$PROVIDER" == "kvm" ]]; then
@@ -222,9 +229,9 @@ if [[ "$PROVIDER" == "kvm" || "$PROVIDER" == "proxmox" || "$PROVIDER" == "vmware
     HYPERVISOR=$(tf_output vsphere_server)
   fi
 
-  if [[ -n "$HYPERVISOR" && -n "$IP_MONITORING" ]]; then
-    step "Discovering monitoring VM external IP (via $HYPERVISOR → $IP_MONITORING)..."
-    JUMP_HOST=$(discover_jump_host "$HYPERVISOR" "$IP_MONITORING" "$ADMIN_USER")
+  if [[ -n "$HYPERVISOR" && -n "$IP_JUMP_HOST" ]]; then
+    step "Discovering jump host external IP (via $HYPERVISOR → $IP_JUMP_HOST)..."
+    JUMP_HOST=$(discover_jump_host "$HYPERVISOR" "$IP_JUMP_HOST" "$ADMIN_USER")
 
     if [[ -n "$JUMP_HOST" ]]; then
       info "found: $JUMP_HOST — regenerating inventory with jump host..."
