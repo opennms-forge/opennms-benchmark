@@ -9,7 +9,12 @@ akvorado_install_dir: /opt/akvorado
 # Where the flow schema lives. Required — the bundled ClickHouse container is
 # disabled (see templates/docker-compose-local.yml.j2) so that a dedicated
 # ClickHouse node (clickhouse) can be measured on its own.
-# Example: ["ch-benchmark-01:9000"]
+#
+# Give an IP, not a hostname: these entries are resolved inside the Akvorado
+# containers, and Docker's embedded resolver does not read the host's
+# /etc/hosts. A lab hostname that resolves fine on the VM NXDOMAINs in the
+# container.
+# Example: ["192.0.2.232:9000"]
 akvorado_clickhouse_servers: []
 
 # Kafka stays inside the compose stack: Akvorado uses it as its own inlet ->
@@ -20,10 +25,11 @@ akvorado_kafka_topic: flows
 akvorado_kafka_partitions: 8
 akvorado_kafka_replication_factor: 1
 
-# Host port for the Akvorado console, published from Traefik's public
-# entrypoint. Traefik also injects the Remote-User header the console
-# authenticates with, which is why it is kept rather than bypassed.
-akvorado_http_port: 8080
+# No console-port variable: upstream publishes the console on 8081 and the
+# private entrypoint on 127.0.0.1:8080, and Compose appends port lists, so any
+# override here adds a binding rather than replacing one. Changing the console
+# port means overriding traefik's published ports with a host port that is not
+# already taken — see upstream's docker-compose-local.yml comments.
 
 # Networks reported as Src/DstNetName/Role in the console. Site-specific, so
 # there is no sensible default — left empty, the section is omitted entirely

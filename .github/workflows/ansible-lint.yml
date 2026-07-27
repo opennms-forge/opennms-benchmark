@@ -11,6 +11,8 @@ on:
       - "opennms-lab-vars.yml"
       - "requirements.yml"
       - ".ansible-lint"
+      # Owns roles_path, so it governs whether roles resolve at all.
+      - "ansible.cfg"
       - "Makefile"
 
 # CI invokes the `make lint-ansible` target, never ansible-lint directly, so local

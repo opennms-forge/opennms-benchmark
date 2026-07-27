@@ -74,6 +74,13 @@ case "$PROVIDER" in
 esac
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# ansible.cfg is the single source of truth for roles_path, and Ansible only
+# picks it up from the current directory. Every path below is absolute, so the
+# caller's cwd is otherwise irrelevant — but without this, invoking the script
+# from anywhere other than the repo root loses deployments/roles and fails with
+# "the role 'clickhouse' was not found".
+export ANSIBLE_CONFIG="$REPO_ROOT/ansible.cfg"
 TF_DIR="$REPO_ROOT/terraform/$PROVIDER"
 TFVARS_FILE="$TF_DIR/${PROVIDER}.tfvars"
 

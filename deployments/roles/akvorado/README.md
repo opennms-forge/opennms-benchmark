@@ -45,7 +45,6 @@ rather than merged, otherwise Compose pulls the disabled service back in.
 | `akvorado_version` | `2.4.1` | Upstream tag to vendor |
 | `akvorado_clickhouse_servers` | `[]` | **Required.** External ClickHouse, e.g. `["ch-benchmark-01:9000"]` |
 | `akvorado_kafka_brokers` | `[kafka:9092]` | In-stack Kafka, Akvorado's own inlet → outlet buffer |
-| `akvorado_http_port` | `8080` | Host port for the console, published from Traefik |
 | `akvorado_networks` | `{}` | Populates `Src/DstNetName/Role` in the console; omitted from the config when empty |
 | `akvorado_demo_exporters` | `false` | Enable upstream's synthetic flow exporters |
 
@@ -56,7 +55,8 @@ generator — it is how the flow path gets exercised end to end.
 
 | Port | Purpose |
 |---|---|
-| `8080/tcp` | Console (configurable) |
+| `8081/tcp` | Console, as published by upstream's Traefik |
+| `127.0.0.1:8080/tcp` | Private entrypoint — unauthenticated services, loopback only |
 | `2055/udp` | NetFlow |
 | `4739/udp` | IPFIX |
 | `6343/udp` | sFlow |
