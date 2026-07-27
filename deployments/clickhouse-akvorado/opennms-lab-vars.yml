@@ -1,0 +1,25 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# Deployment H overlay — layered onto the play as extra-vars by deploy.sh.
+#
+# The file name is inherited from the OpenNMS deployments and is a poor fit
+# here: H deploys no OpenNMS. Renaming the overlay across all deployments is
+# tracked separately.
+
+# Akvorado writes to the dedicated ClickHouse node rather than the container
+# bundled in its own compose stack, which the role disables. Host name comes
+# from the topology (role key `clickhouse` -> vm_name `ch-benchmark-01`).
+akvorado_clickhouse_servers:
+  - "ch-benchmark-01:9000"
+
+# Populates Src/DstNetName and Role in the console. The lab's mgmt subnet.
+akvorado_networks:
+  192.0.2.0/24:
+    name: lab
+    role: customers
+
+# H has no load generator, so upstream's synthetic exporters are how the flow
+# path gets exercised end to end.
+akvorado_demo_exporters: true

@@ -241,12 +241,28 @@ ansible-galaxy collection install \
   -r "$REPO_ROOT/requirements.yml" \
   --force-with-deps
 
-step "[4/4] Deploying OpenNMS Horizon..."
+# A deployment may ship its own playbook when it stands up a different stack.
+# Deployment H (clickhouse-akvorado) deploys no OpenNMS at all, so bolting its
+# plays into opennms-playbook.yml would hide a second stack inside a playbook
+# named for the first. Every OpenNMS deployment ships no playbook.yml and gets
+# the shared one, which keeps its play order — the stack's dependency graph —
+# in exactly one place.
+# Gated on kvm for the same reason as the vars overlay above: only kvm is
+# spec-driven, so on other providers --deployment does not shape the infra and
+# a per-deployment playbook would target hosts that were never provisioned.
+DEPLOYMENT_PLAYBOOK="$REPO_ROOT/opennms-playbook.yml"
+STACK_LABEL="OpenNMS Horizon"
+if [[ -n "$DEPLOYMENT" && "$PROVIDER" == "kvm" && -f "$REPO_ROOT/deployments/$DEPLOYMENT/playbook.yml" ]]; then
+  DEPLOYMENT_PLAYBOOK="$REPO_ROOT/deployments/$DEPLOYMENT/playbook.yml"
+  STACK_LABEL="$DEPLOYMENT stack"
+fi
+
+step "[4/4] Deploying $STACK_LABEL..."
 # shellcheck disable=SC2086
 ansible-playbook \
   --become \
   -i "$REPO_ROOT/ansible-inventory.yml" \
   $ANSIBLE_VERBOSITY \
-  "$REPO_ROOT/opennms-playbook.yml" \
+  "$DEPLOYMENT_PLAYBOOK" \
   --extra-vars="@$REPO_ROOT/opennms-lab-vars.yml" \
   $DEPLOYMENT_VARS_FILE

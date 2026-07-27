@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "bootstrap/**"
+      - "deployments/**"
       - "experiments/**"
       - "opennms-playbook.yml"
       - "opennms-lab-vars.yml"
