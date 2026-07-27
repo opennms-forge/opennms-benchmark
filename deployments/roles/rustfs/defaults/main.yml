@@ -22,16 +22,22 @@ rustfs_log_dir: /var/log/rustfs
 rustfs_user: rustfs
 rustfs_group: rustfs
 
-# The S3 API port. Not made configurable: upstream's default is :9000 and the
-# address flag is not documented in the released material, so the lab uses what
-# is actually verified rather than a guessed environment variable.
+# S3 API port, applied through RUSTFS_ADDRESS in the unit. Upstream's default
+# is ":9000" (crates/config/src/constants/app.rs, ENV_RUSTFS_ADDRESS /
+# DEFAULT_ADDRESS), which binds all interfaces.
 rustfs_s3_port: 9000
 
-# RustFS ships a default credential pair and warns when it is left in place.
-# Override these; they are not secret-worthy for a private lab subnet, but they
-# must not be the shipped defaults.
-rustfs_access_key: rustfs
-rustfs_secret_key: rustfs12345
+# RustFS enables an admin web console by default (DEFAULT_CONSOLE_ENABLE), which
+# would expose it with these credentials on every interface. The lab only needs
+# the S3 API, so it is off unless asked for.
+rustfs_console_enable: false
+rustfs_console_port: 9001
+
+# Deliberately NOT defaulted. Shipping a default here would make the assert in
+# tasks/main.yml vacuous and let a deployment that forgets to set credentials
+# silently run with a pair published in this repository.
+#   rustfs_access_key: ...
+#   rustfs_secret_key: ...
 
 # Buckets to create at deploy time. S3 PutObject fails against a bucket that
 # does not exist, and Mimir does not create its own — without these it starts
