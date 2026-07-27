@@ -14,6 +14,9 @@ locals {
 
   # t-shirt size class → libvirt memory (MiB) / vCPU (see deployments/README.md).
   size_map = {
+    # tiny exists for wiring/shape test beds only — enough to start a service,
+    # not enough to measure one. See deployments/README.md.
+    tiny   = { memory = 2048, vcpu = 2 }
     small  = { memory = 4096, vcpu = 2 }
     medium = { memory = 8192, vcpu = 2 }
     large  = { memory = 8192, vcpu = 4 }

@@ -1,0 +1,23 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# Overlay for the HA shape test bed.
+
+# Object store. The rustfs role ships no default credentials deliberately.
+rustfs_access_key: mimir
+rustfs_secret_key: mimir-lab-secret
+
+# 3-node Mimir needs shared storage; the filesystem backend is per-node.
+# By hostname: Mimir and RustFS both run as host processes, so the etc_hosts
+# entries resolve for them.
+mimir_s3_endpoint: "rustfs-benchmark-01:9000"
+mimir_s3_access_key_id: mimir
+mimir_s3_secret_access_key: mimir-lab-secret
+
+# All Sentinels share a location so they form one pool; their controller ids
+# stay distinct via machine_id, and the shared Kafka group.id is what makes
+# them split the flow workload rather than each processing every record.
+opennms_sentinel_controller:
+  id: "{{ ansible_facts['machine_id'] if ansible_facts['machine_id'] is defined else inventory_hostname }}"
+  location: lab-location-01
