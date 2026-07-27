@@ -23,3 +23,9 @@ collections:
   # non-Galaxy 6.1.1-hotfix.1 build is not needed at that Grafana version.
   - name: grafana.grafana
     version: "6.1.0"
+
+  # Used by the repo-local deployments/roles/akvorado role, which drives
+  # Akvorado's Docker Compose stack via community.docker.docker_compose_v2.
+  # Not a dependency of the OpenNMS deployment roles.
+  - name: community.docker
+    version: "4.5.0"

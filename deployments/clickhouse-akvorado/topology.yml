@@ -8,7 +8,9 @@ roles:
     count: 1
     size: large
     subnets: [mgmt, sim]
-    groups: [clickhouse, docker_engine]
+    # No docker_engine: the clickhouse role installs native .deb packages, so
+    # Docker would be installed on a host that never uses it.
+    groups: [clickhouse]
   akvorado:
     count: 1
     size: medium

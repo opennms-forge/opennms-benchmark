@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "bootstrap/**"
+      - "deployments/**"
       - "experiments/**"
       - "opennms-playbook.yml"
       - "opennms-lab-vars.yml"
@@ -45,8 +46,12 @@ jobs:
       - name: Install OpenNMS deployment collections
         run: ansible-galaxy collection install -r requirements.yml -p ~/.ansible/collections --force-with-deps
 
-      - name: Set Ansible roles path
-        run: echo "ANSIBLE_ROLES_PATH=$GITHUB_WORKSPACE/bootstrap/roles" >> "$GITHUB_ENV"
+      # No ANSIBLE_ROLES_PATH here: the env var overrides ansible.cfg's
+      # roles_path, so duplicating it in CI let the two drift apart — CI kept
+      # resolving only bootstrap/roles after deployments/roles was added, and
+      # failed on a role that resolves fine locally. ansible.cfg is the single
+      # source of truth; `make lint-ansible` runs from the repo root and picks
+      # it up.
 
       # ansible-lint parses vault-encrypted group_vars but never decrypts them;
       # a throwaway password file lets them load without a real secret in CI.
