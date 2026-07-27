@@ -26,8 +26,10 @@ akvorado_clickhouse_servers: []
 #
 # Defaults to the inventory's lab_mgmt_ip: management, never the jump host's
 # external DHCP address, so the unauthenticated orchestrator API stays off the
-# public interface. Left empty, the role falls back to upstream's in-compose
-# URL — correct only when ClickHouse also runs in the stack.
+# public interface. Required — the role asserts it, because ClickHouse is
+# always external here and a compose-internal URL it cannot resolve would only
+# surface later as dictionaries that silently never load. Only the spec-driven
+# topology-inventory module emits lab_mgmt_ip; elsewhere, set this explicitly.
 akvorado_orchestrator_host: "{{ lab_mgmt_ip | default('') }}"
 akvorado_orchestrator_port: 8090
 

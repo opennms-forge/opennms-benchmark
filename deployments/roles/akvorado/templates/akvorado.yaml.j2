@@ -38,11 +38,7 @@ clickhouse:
 {# Keep these tags at column 0: Ansible templates with trim_blocks but not     #}
 {# lstrip_blocks, so leading whitespace on a comment line survives into the    #}
 {# output and would corrupt the indentation of the block below.                #}
-{% if akvorado_orchestrator_host %}
   orchestrator-url: http://{{ akvorado_orchestrator_host }}:{{ akvorado_orchestrator_port }}
-{% else %}
-  orchestrator-url: http://akvorado-orchestrator:8080
-{% endif %}
   prometheus-endpoint: /metrics
 {% if akvorado_networks %}
   networks:
