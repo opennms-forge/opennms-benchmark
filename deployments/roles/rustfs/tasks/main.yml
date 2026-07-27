@@ -1,0 +1,141 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+- name: Assert RustFS credentials are set
+  ansible.builtin.assert:
+    that:
+      - rustfs_access_key | length > 0
+      - rustfs_secret_key | length > 0
+    fail_msg: >-
+      rustfs_access_key and rustfs_secret_key must both be set. RustFS ships a
+      default credential pair and warns at startup when it is left in place;
+      the exact shipped values are not asserted here because they are not
+      documented in the released material — check the startup log for that
+      warning rather than trusting this guard to catch it.
+  tags:
+    - always
+
+- name: Install unzip for the RustFS release archive
+  ansible.builtin.apt:
+    name: unzip
+    state: present
+  tags:
+    - rustfs
+
+- name: Create the rustfs system group
+  ansible.builtin.group:
+    name: "{{ rustfs_group }}"
+    system: true
+  tags:
+    - rustfs
+
+- name: Create the rustfs system user
+  ansible.builtin.user:
+    name: "{{ rustfs_user }}"
+    group: "{{ rustfs_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ rustfs_data_dir }}"
+    create_home: false
+  tags:
+    - rustfs
+
+- name: Create the RustFS directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - {path: "{{ rustfs_install_dir }}", owner: root, group: root, mode: "0755"}
+    - {path: "{{ rustfs_install_dir }}/{{ rustfs_version }}", owner: root, group: root, mode: "0755"}
+    - {path: "{{ rustfs_data_dir }}", owner: "{{ rustfs_user }}", group: "{{ rustfs_group }}", mode: "0750"}
+    - {path: "{{ rustfs_log_dir }}", owner: "{{ rustfs_user }}", group: "{{ rustfs_group }}", mode: "0750"}
+  tags:
+    - rustfs
+
+# Unpacked per version and exposed through a stable "current" symlink, so
+# bumping rustfs_version fetches the new build rather than being skipped by a
+# version-independent creates: guard, and flips the path systemd starts.
+- name: Install the RustFS binary
+  ansible.builtin.unarchive:
+    src: "{{ rustfs_pkg_url }}"
+    dest: "{{ rustfs_install_dir }}/{{ rustfs_version }}"
+    remote_src: true
+    creates: "{{ rustfs_install_dir }}/{{ rustfs_version }}/rustfs"
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - rustfs
+
+- name: Link the running RustFS version
+  ansible.builtin.file:
+    src: "{{ rustfs_install_dir }}/{{ rustfs_version }}"
+    dest: "{{ rustfs_install_dir }}/current"
+    state: link
+  notify:
+    - Restart rustfs
+  tags:
+    - rustfs
+
+- name: Install the RustFS systemd unit
+  ansible.builtin.template:
+    src: rustfs.service.j2
+    dest: /etc/systemd/system/rustfs.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Restart rustfs
+  tags:
+    - rustfs
+    - systemd
+
+- name: Enable and start RustFS
+  ansible.builtin.systemd_service:
+    name: rustfs.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  tags:
+    - rustfs
+    - systemd
+
+# Buckets are applied by the handler-free path below, so flush any pending
+# restart first: creating them against a stale process would use the old
+# credentials.
+- name: Apply pending RustFS restarts before creating buckets
+  ansible.builtin.meta: flush_handlers
+  tags:
+    - rustfs
+
+- name: Wait for the RustFS S3 endpoint
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ rustfs_s3_port }}"
+    timeout: 60
+  tags:
+    - rustfs
+
+- name: Install boto3 for S3 bucket management
+  ansible.builtin.apt:
+    name: python3-boto3
+    state: present
+  tags:
+    - rustfs
+
+# S3 PutObject fails against a bucket that does not exist and Mimir does not
+# create its own, so without this Mimir starts and then fails every write.
+- name: Create the RustFS buckets
+  amazon.aws.s3_bucket:
+    name: "{{ item }}"
+    state: present
+    endpoint_url: "http://{{ lab_mgmt_ip | default('127.0.0.1') }}:{{ rustfs_s3_port }}"
+    access_key: "{{ rustfs_access_key }}"
+    secret_key: "{{ rustfs_secret_key }}"
+    region: us-east-1
+  loop: "{{ rustfs_buckets }}"
+  tags:
+    - rustfs

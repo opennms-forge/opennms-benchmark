@@ -1,0 +1,23 @@
+{# Copyright 2026 Ronny Trommer <ronny@no42.org> #}
+{# SPDX-License-Identifier: Apache-2.0 #}
+{# Managed by the rustfs Ansible role — local changes are overwritten. #}
+[Unit]
+Description=RustFS S3-compatible object storage
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ rustfs_user }}
+Group={{ rustfs_group }}
+Environment=RUSTFS_VOLUMES={{ rustfs_data_dir }}
+Environment=RUSTFS_ACCESS_KEY={{ rustfs_access_key }}
+Environment=RUSTFS_SECRET_KEY={{ rustfs_secret_key }}
+Environment=RUSTFS_OBS_LOG_DIRECTORY={{ rustfs_log_dir }}
+Environment=RUSTFS_OBS_LOGGER_LEVEL=warn
+ExecStart={{ rustfs_install_dir }}/current/rustfs
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

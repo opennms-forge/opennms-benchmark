@@ -1,0 +1,42 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# S3-compatible object storage, used here as the shared blocks store that
+# multi-node Mimir requires. Lives in the benchmark rather than the
+# indigo423.opennms collection: OpenNMS has no wire to it — OpenNMS writes to
+# Mimir, and Mimir writes here — so under the collection's scope rule the
+# implementation is a lab choice. stub_mimir only takes a generic S3 endpoint.
+
+# renovate: datasource=github-releases depName=rustfs/rustfs
+# Every RustFS release is still a pre-release; there is no stable 1.0.0.
+rustfs_version: "1.0.0-beta.11"
+rustfs_arch: x86_64
+rustfs_libc: gnu
+rustfs_pkg_url: >-
+  https://github.com/rustfs/rustfs/releases/download/{{ rustfs_version }}/rustfs-linux-{{ rustfs_arch }}-{{ rustfs_libc }}-v{{ rustfs_version }}.zip
+
+rustfs_install_dir: /opt/rustfs
+rustfs_data_dir: /var/lib/rustfs
+rustfs_log_dir: /var/log/rustfs
+rustfs_user: rustfs
+rustfs_group: rustfs
+
+# The S3 API port. Not made configurable: upstream's default is :9000 and the
+# address flag is not documented in the released material, so the lab uses what
+# is actually verified rather than a guessed environment variable.
+rustfs_s3_port: 9000
+
+# RustFS ships a default credential pair and warns when it is left in place.
+# Override these; they are not secret-worthy for a private lab subnet, but they
+# must not be the shipped defaults.
+rustfs_access_key: rustfs
+rustfs_secret_key: rustfs12345
+
+# Buckets to create at deploy time. S3 PutObject fails against a bucket that
+# does not exist, and Mimir does not create its own — without these it starts
+# and then fails every write.
+rustfs_buckets:
+  - mimir-blocks
+  - mimir-ruler
+  - mimir-alertmanager
