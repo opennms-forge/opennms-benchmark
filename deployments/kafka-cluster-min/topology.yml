@@ -1,0 +1,20 @@
+name: kafka-cluster-min
+description: >-
+  Component test bed — KRaft cluster formation only. Not an A–H benchmark
+  topology: it verifies stub_kafka's derived node ids, quorum voters and
+  shared cluster ID on a footprint that fits the lab hypervisor (28 GB),
+  because Deployment A needs 132 GB and cannot run there.
+roles:
+  kafka:
+    count: 3
+    size: medium
+    # Mirrors Deployment A's shape so the bed exercises the same NIC layout.
+    subnets: [mgmt, kafka]
+    groups: [message_broker]
+  # Jump host only — see es-cluster-min for why every kvm deployment needs one.
+  monitoring:
+    count: 1
+    size: small
+    subnets: [mgmt, external]
+    public_ip: true
+    groups: []
