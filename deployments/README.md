@@ -111,6 +111,7 @@ Descriptor component order: `es mm vm ch ak rr pg sn kf on mn nl6`.
 | `vm-single` (F) | `1vm-1pg-1on` | single VictoriaMetrics |
 | `mimir-single` (G) | `1mm-1pg-1on` | single Mimir |
 | `clickhouse-akvorado` (H) | `1ch-1ak` | standalone flow-engine (no OpenNMS) |
+| `es-cluster-min` | `3es` | **component test bed**, not A–H — verifies Elasticsearch cluster formation on a footprint that fits the lab (28 GB) |
 
 **Interpretation notes:** B lists RRDTool without a Core, but RRD is a Core
 storage strategy, so `baseline`/B include `core` with the RRD strategy set at the

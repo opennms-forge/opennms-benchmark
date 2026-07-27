@@ -1,0 +1,22 @@
+name: es-cluster-min
+description: >-
+  Component test bed — Elasticsearch cluster formation only. Not an A–H
+  benchmark topology: it exists to verify stub_elasticsearch's derived
+  discovery on a footprint that fits the lab hypervisor (28 GB), because
+  Deployment A needs 132 GB and cannot run there.
+roles:
+  elasticsearch:
+    count: 3
+    size: large
+    subnets: [mgmt, db]
+    groups: [elasticsearch]
+  # Jump host only. Every kvm deployment needs a public_ip node or there is no
+  # ProxyCommand and Ansible cannot reach the 192.0.2.x hosts at all. Kept out
+  # of mon_servers so the bootstrap monitoring stack (Grafana, Prometheus,
+  # Traefik...) is not dragged in for a test bed that does not need it.
+  monitoring:
+    count: 1
+    size: small
+    subnets: [mgmt, external]
+    public_ip: true
+    groups: []
