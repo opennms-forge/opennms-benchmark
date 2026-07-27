@@ -1,0 +1,21 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# Object storage first: Mimir's ingesters need their buckets to exist, and the
+# rustfs role creates them. Starting Mimir first would leave it running and
+# failing every write.
+
+- name: Manage object storage
+  hosts: rustfs
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - rustfs
+
+- name: Manage Mimir
+  hosts: mimir
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - indigo423.opennms.stub_mimir

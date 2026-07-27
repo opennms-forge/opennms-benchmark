@@ -31,6 +31,7 @@ locals {
     netsim     = "netsim", monitoring = "mon", elasticsearch = "es"
     sentinel   = "sentinel", mimir = "mimir", victoriametrics = "vm"
     clickhouse = "ch", akvorado = "akvorado", rrd = "rrd"
+    rustfs     = "rustfs"
   }
 
   subnet_cidr = {
@@ -43,8 +44,8 @@ locals {
   # Per-subnet base IP offset per provider role; node i gets offset + i.
   # Baseline offsets reproduce the current lab.tfvars addresses exactly.
   ip_offset = {
-    mgmt  = { database = 4, core = 5, kafka = 6, minion = 7, monitoring = 8, netsim = 9, elasticsearch = 10, sentinel = 11, rrd = 12, mimir = 16, victoriametrics = 24, clickhouse = 40, akvorado = 41 }
-    db    = { database = 4, core = 5, elasticsearch = 6, sentinel = 8, mimir = 16, victoriametrics = 24, clickhouse = 40 }
+    mgmt  = { database = 4, core = 5, kafka = 6, minion = 7, monitoring = 8, netsim = 9, elasticsearch = 10, sentinel = 11, rrd = 12, mimir = 16, victoriametrics = 24, clickhouse = 40, akvorado = 41, rustfs = 42 }
+    db    = { database = 4, core = 5, elasticsearch = 6, sentinel = 8, mimir = 16, victoriametrics = 24, clickhouse = 40, rustfs = 42 }
     kafka = { kafka = 4, core = 5, minion = 6, sentinel = 8 }
     sim   = { minion = 5, netsim = 6, clickhouse = 10, akvorado = 11 }
   }

@@ -1,0 +1,18 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# Overlay for the Mimir clustering test bed.
+
+# Object store credentials. The rustfs role ships no defaults deliberately, so
+# these must be supplied. Not secret-worthy on a private lab subnet, but they
+# are written to /etc/rustfs/credentials at 0600 rather than into the unit.
+rustfs_access_key: mimir
+rustfs_secret_key: mimir-lab-secret
+
+# Mimir reaches the object store by hostname: both run as host processes, so
+# the etc_hosts role's entries resolve for them. (Container workloads cannot
+# rely on that — Docker's resolver ignores /etc/hosts.)
+mimir_s3_endpoint: "rustfs-benchmark-01:9000"
+mimir_s3_access_key_id: mimir
+mimir_s3_secret_access_key: mimir-lab-secret

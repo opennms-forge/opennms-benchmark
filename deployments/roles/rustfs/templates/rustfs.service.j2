@@ -1,0 +1,27 @@
+{# Copyright 2026 Ronny Trommer <ronny@no42.org> #}
+{# SPDX-License-Identifier: Apache-2.0 #}
+{# Managed by the rustfs Ansible role — local changes are overwritten. #}
+[Unit]
+Description=RustFS S3-compatible object storage
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ rustfs_user }}
+Group={{ rustfs_group }}
+Environment=RUSTFS_VOLUMES={{ rustfs_data_dir }}
+Environment=RUSTFS_ADDRESS=:{{ rustfs_s3_port }}
+Environment=RUSTFS_CONSOLE_ENABLE={{ rustfs_console_enable | bool | lower }}
+Environment=RUSTFS_CONSOLE_ADDRESS=:{{ rustfs_console_port }}
+Environment=RUSTFS_OBS_LOG_DIRECTORY={{ rustfs_log_dir }}
+Environment=RUSTFS_OBS_LOGGER_LEVEL=warn
+# Credentials come from a 0600 file rather than the unit, which is world
+# readable and would also leak them into --diff output.
+EnvironmentFile=/etc/rustfs/credentials
+ExecStart={{ rustfs_install_dir }}/current/rustfs
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+
+# One address for both the readiness probe and the bucket calls, so they cannot
+# disagree. Prefers the inventory's management address and falls back to
+# loopback on an inventory that does not provide one.
+_rustfs_s3_host: "{{ lab_mgmt_ip | default('127.0.0.1') }}"
