@@ -46,11 +46,29 @@ locals {
 
   # Per-subnet base IP offset per provider role; node i gets offset + i.
   # Baseline offsets reproduce the current lab.tfvars addresses exactly.
+  # Address allocation: every role gets a contiguous block of role_block_size
+  # addresses in every subnet, so a role can scale up to that many nodes without
+  # walking into the next role's space.
+  #
+  # The previous scheme packed roles at adjacent per-subnet offsets, which
+  # silently handed two VMs the same address as soon as a role had count > 1:
+  # kafka(6) x3 ran into minion(7) and monitoring(8), elasticsearch(10) x3 into
+  # sentinel(11) and rrd(12). Only mimir and victoriametrics escaped, because
+  # they had been given gaps by hand when they were the multi-node roles that
+  # had actually shipped. Deployment A could never have been provisioned.
+  #
+  # Offsets are now identical across subnets, so a role sits in the same block
+  # wherever it appears — one number to reason about instead of four maps.
+  role_block_size = 4
+  # 0 is the network address and 1 the mgmt gateway; 2-3 are left spare.
+  role_block_base = 4
+  role_order = [
+    "database", "core", "kafka", "minion", "monitoring", "netsim",
+    "elasticsearch", "sentinel", "rrd", "mimir", "victoriametrics",
+    "clickhouse", "akvorado", "rustfs",
+  ]
   ip_offset = {
-    mgmt  = { database = 4, core = 5, kafka = 6, minion = 7, monitoring = 8, netsim = 9, elasticsearch = 10, sentinel = 11, rrd = 12, mimir = 16, victoriametrics = 24, clickhouse = 40, akvorado = 41, rustfs = 42 }
-    db    = { database = 4, core = 5, elasticsearch = 6, sentinel = 8, mimir = 16, victoriametrics = 24, clickhouse = 40, rustfs = 42 }
-    kafka = { kafka = 4, core = 5, minion = 6, sentinel = 8 }
-    sim   = { minion = 5, netsim = 6, clickhouse = 10, akvorado = 11 }
+    for i, role in local.role_order : role => local.role_block_base + i * local.role_block_size
   }
 
   named_routes = {
@@ -80,7 +98,7 @@ locals {
         for si, subnet in n.cfg.subnets : {
           subnet     = subnet
           iface_name = "enp${si + 1}s0"
-          address    = subnet == "external" ? null : cidrhost(local.subnet_cidr[subnet], local.ip_offset[subnet][n.prole] + n.index)
+          address    = subnet == "external" ? null : cidrhost(local.subnet_cidr[subnet], local.ip_offset[n.prole] + n.index)
           prefix     = subnet == "external" ? null : 26
           gateway    = (subnet == "mgmt" && !try(n.cfg.public_ip, false)) ? local.gateway_mgmt : null
           routes     = try(n.cfg.routes[subnet], null) != null ? [local.named_routes[n.cfg.routes[subnet]]] : []
@@ -104,6 +122,13 @@ locals {
       } : {}
     }
   }
+
+  # Every statically assigned address, used by the uniqueness precondition below.
+  all_addresses = flatten([
+    for key, n in local.topology : [
+      for i in n.interfaces : i.address if i.address != null
+    ]
+  ])
 
   # The jump host is the public_ip node (its external DHCP IP is var.jump_host).
   # one() errors if a spec marks more than one node public_ip; null if none.
@@ -180,4 +205,19 @@ module "inventory" {
   jump_host      = var.jump_host
   jump_host_name = local.jump_host_name
   parent_groups  = { opennms_stack = local.onms_stack_children }
+}
+
+# Fails the plan if two interfaces are assigned the same address. The previous
+# offset scheme did this silently: three hosts shared 192.0.2.200, and the only
+# symptom was a jump host that appeared to have no external NIC. A collision
+# should stop the plan, not surface hours later as unexplained networking.
+resource "terraform_data" "address_uniqueness" {
+  input = length(local.all_addresses)
+
+  lifecycle {
+    precondition {
+      condition     = length(distinct(local.all_addresses)) == length(local.all_addresses)
+      error_message = "Duplicate IP addresses in the rendered topology: a role's node count exceeds its address block (role_block_size). Raise role_block_size or re-space local.role_order."
+    }
+  }
 }

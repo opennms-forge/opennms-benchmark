@@ -8,11 +8,17 @@ This is an infrastructure-as-code benchmarking lab for [OpenNMS Horizon](https:/
 
 Lab VMs (all in `192.0.2.0/24`):
 - `192.0.2.196` — PostgreSQL (database)
-- `192.0.2.197` — OpenNMS Core
-- `192.0.2.198` — Kafka (message broker)
-- `192.0.2.199` — OpenNMS Minion (distributed collector)
-- `192.0.2.134` — Net-SNMP Simulator (10.42.0.0/16 SNMP targets)
-- `192.0.2.201` — Monitoring (Prometheus, Grafana, Jaeger)
+- `192.0.2.200` — OpenNMS Core
+- `192.0.2.204` — Kafka (message broker)
+- `192.0.2.208` — OpenNMS Minion (distributed collector)
+- `192.0.2.152` — Net-SNMP Simulator (10.42.0.0/16 SNMP targets, sim subnet)
+- `192.0.2.212` — Monitoring (Prometheus, Grafana, Jaeger)
+
+Addresses come from per-role blocks (`role_block_size` in
+`terraform/kvm/main.tf`), so each role owns a contiguous range and can scale to
+several nodes without colliding with the next role. The previous scheme packed
+roles at adjacent offsets and silently gave two VMs the same address whenever a
+role's count exceeded one.
 
 ## Architecture
 
@@ -68,7 +74,7 @@ cd experiments/inventory
 ### SNMP simulation routing (one-time setup after VM boot)
 ```bash
 # On Minion — route SNMP simulation subnet via simulator
-ssh labuser@192.0.2.199 "sudo ip r a 10.42.0.0/16 via 192.0.2.134"
+ssh labuser@192.0.2.208 "sudo ip r a 10.42.0.0/16 via 192.0.2.152"
 ```
 
 ### Update packages / reboot
@@ -119,11 +125,11 @@ Examples: `db-benchmark-01`, `core-benchmark-01`, `minion-benchmark-01`, `mon-be
 
 | Service | URL (via Traefik proxy) | Direct URL |
 |---|---|---|
-| OpenNMS UI | `https://<monitoring>/opennms` | `http://192.0.2.197:8980/opennms` |
-| Grafana | `https://<monitoring>/grafana` | `http://192.0.2.200:3000` |
-| Jaeger | `https://<monitoring>/jaeger` | `http://192.0.2.200:16686` |
-| Prometheus | `https://<monitoring>/prometheus` | `http://192.0.2.200:9090` |
-| Kafka UI | `https://<monitoring>/kafka` | `http://192.0.2.198:8080` |
+| OpenNMS UI | `https://<monitoring>/opennms` | `http://192.0.2.200:8980/opennms` |
+| Grafana | `https://<monitoring>/grafana` | `http://192.0.2.212:3000` |
+| Jaeger | `https://<monitoring>/jaeger` | `http://192.0.2.212:16686` |
+| Prometheus | `https://<monitoring>/prometheus` | `http://192.0.2.212:9090` |
+| Kafka UI | `https://<monitoring>/kafka` | `http://192.0.2.204:8080` |
 
 `<monitoring>` is the monitoring VM's external IP or hostname.
 

@@ -174,7 +174,7 @@ Only the monitoring VM has a public IP. To reach other VMs from your local machi
 **Option 1 — SSH tunneling through the monitoring VM**
 
 ```bash
-ssh -L 8980:192.0.2.197:8980 labuser@<monitoring-public-ip>
+ssh -L 8980:192.0.2.200:8980 labuser@<monitoring-public-ip>
 ```
 
 **Option 2 — Tailscale (recommended for full access)**

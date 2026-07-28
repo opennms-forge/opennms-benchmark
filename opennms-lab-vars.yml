@@ -18,10 +18,10 @@ opennms_datasource_connection_pool_min_pool: 100
 opennms_datasource_connection_pool_max_pool: 100
 opennms_datasource_connection_pool_max_size: 100
 
-onns_hzn_base_url: http://192.0.2.197:8980
+onns_hzn_base_url: http://192.0.2.200:8980
 
 # Elasticsearch datasource
-opennms_es_host: "192.0.2.202"
+opennms_es_host: "192.0.2.220"
 opennms_es_port: 9200
 
 # Pinned to a Grafana 12.x release so the stock grafana.grafana 6.1.0 collection
@@ -65,7 +65,7 @@ postgres_user: postgres
 postgres_listen_addresses: "*"
 postgres_hba_permissions_v4: "192.0.2.0/24"
 
-kafka_bootstrap_servers: "192.0.2.68:9092"
+kafka_bootstrap_servers: "192.0.2.76:9092"
 
 opennms_properties_webapp:
   opennms.web.base-url: https://%x%c/

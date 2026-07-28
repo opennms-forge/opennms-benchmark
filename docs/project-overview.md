@@ -68,10 +68,10 @@ After a full deployment, these services are available on the lab network:
 
 | Service | URL | Credentials |
 |---|---|---|
-| OpenNMS UI | `http://192.0.2.197:8980/opennms` | admin / admin |
+| OpenNMS UI | `http://192.0.2.200:8980/opennms` | admin / admin |
 | Grafana | `http://192.0.2.200:3000` | admin / admin |
 | Jaeger | `http://192.0.2.200:16686` | — |
-| Kafka UI | `http://192.0.2.198:8080` | — |
+| Kafka UI | `http://192.0.2.204:8080` | — |
 | Prometheus | `http://192.0.2.200:9090` | — |
 
 ## Related Resources
