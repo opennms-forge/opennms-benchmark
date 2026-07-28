@@ -21,3 +21,14 @@ mimir_s3_secret_access_key: mimir-lab-secret
 opennms_sentinel_controller:
   id: "{{ ansible_facts['machine_id'] if ansible_facts['machine_id'] is defined else inventory_hostname }}"
   location: lab-location-01
+
+# The lab pins an 8 GB OpenNMS heap, sized for the real xlarge core (16 GB).
+# This bed's core is medium (8 GB total), so the JVM cannot commit a heap the
+# size of the whole machine and dies at startup with
+#   Native memory allocation (mmap) failed to map 8589934592 bytes
+# Scaled to fit. Another reason this bed measures nothing: OpenNMS is running
+# on a quarter of its intended heap.
+opennms_jvm_conf:
+  JAVA_HEAP_SIZE: 2048
+  JAVA_INITIAL_HEAP_SIZE: 2048
+  ADDITIONAL_MANAGER_OPTIONS: "-XX:+UseG1GC -javaagent:/opt/prom-jmx-exporter/jmx_prometheus_javaagent.jar=9299:/opt/prom-jmx-exporter/config.yaml"
