@@ -6,7 +6,7 @@ datasources:
     type: opennms-performance-datasource
     orgId: 1
     access: proxy
-    url: http://192.0.2.197:8980/opennms
+    url: http://192.0.2.200:8980/opennms
     isDefault: true
     basicAuth: true
     basicAuthUser: admin
@@ -18,7 +18,7 @@ datasources:
     type: opennms-entity-datasource
     orgId: 1
     access: proxy
-    url: http://192.0.2.197:8980/opennms
+    url: http://192.0.2.200:8980/opennms
     basicAuth: true
     basicAuthUser: admin
     secureJsonData:
@@ -29,7 +29,7 @@ datasources:
     type: opennms-flow-datasource
     orgId: 1
     access: proxy
-    url: http://192.0.2.197:8980/opennms
+    url: http://192.0.2.200:8980/opennms
     basicAuth: true
     basicAuthUser: admin
     secureJsonData:
@@ -68,7 +68,7 @@ datasources:
     type: elasticsearch
     orgId: 1
     access: proxy
-    url: http://192.0.2.202:9200
+    url: http://192.0.2.220:9200
     jsonData:
       esVersion: "8.0.0"
       timeField: "@timestamp"

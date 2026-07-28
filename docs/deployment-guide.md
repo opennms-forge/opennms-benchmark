@@ -84,17 +84,17 @@ ansible-playbook --user labuser --become \
 
 > **Important:** After deployment, restart OpenNMS Core manually on the core VM to activate the JMX Prometheus exporter:
 > ```bash
-> ssh labuser@192.0.2.197 "sudo systemctl restart opennms"
+> ssh labuser@192.0.2.200 "sudo systemctl restart opennms"
 > ```
 
 ### 7. Verify services
 
 | Service | URL |
 |---|---|
-| OpenNMS UI | `http://192.0.2.197:8980/opennms` |
+| OpenNMS UI | `http://192.0.2.200:8980/opennms` |
 | Grafana | `http://192.0.2.200:3000` |
 | Jaeger | `http://192.0.2.200:16686` |
-| Kafka UI | `http://192.0.2.198:8080` |
+| Kafka UI | `http://192.0.2.204:8080` |
 | Prometheus | `http://192.0.2.200:9090` |
 
 Default credentials: OpenNMS and Grafana both use `admin / admin`.
@@ -273,7 +273,7 @@ After rebooting any VM, check and re-apply these ephemeral settings:
 | VM | Action |
 |---|---|
 | netsim | `sudo ip route add local 10.42.0.0/16 dev lo` |
-| minion | `sudo ip route add 10.42.0.0/16 via 192.0.2.134` |
+| minion | `sudo ip route add 10.42.0.0/16 via 192.0.2.152` |
 | monitoring | Re-enable IP forwarding if using Tailscale routing |
 
 The Terraform cloud-init module applies the minion route on first boot only. Subsequent reboots require the manual command above (or re-running the `net-snmp` Ansible role for netsim).

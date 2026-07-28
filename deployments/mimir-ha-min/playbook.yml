@@ -1,0 +1,18 @@
+---
+# Copyright 2026 Ronny Trommer <ronny@no42.org>
+# SPDX-License-Identifier: Apache-2.0
+#
+# Object storage first: 3-node Mimir needs its buckets to exist before it
+# starts, and Mimir does not create them. Everything else is the shared OpenNMS
+# play order, imported rather than copied so the stack's dependency graph —
+# database before core, broker before minion — stays in exactly one place.
+
+- name: Manage object storage
+  hosts: rustfs
+  become: true
+  roles:
+    - indigo423.opennms.common
+    - rustfs
+
+- name: Manage the OpenNMS stack
+  ansible.builtin.import_playbook: ../../opennms-playbook.yml

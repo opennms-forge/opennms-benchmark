@@ -68,6 +68,7 @@ default; opt out by omitting the role or setting `count: 0`.
 
 | class | vCPU | RAM | notes |
 |---|---|---|---|
+| `tiny` | 2 | 2 GiB | **shape/wiring test beds only.** Enough to start a service, not to measure one — a 2 GiB Elasticsearch gets a ~1 GiB heap. Never use in an A–H benchmark topology |
 | `small` | 2 | 4 GiB | db, kafka, minion, netsim, mon |
 | `medium` | 2 | 8 GiB | |
 | `large` | 4 | 8 GiB | elasticsearch |
@@ -114,6 +115,7 @@ Descriptor component order: `es mm vm ch ak rr pg sn kf on mn nl6`.
 | `es-cluster-min` | `3es` | **component test bed**, not A–H — verifies Elasticsearch cluster formation on a footprint that fits the lab (28 GB) |
 | `kafka-cluster-min` | `3kf` | **component test bed**, not A–H — verifies KRaft cluster formation (shared cluster ID, quorum, RF 3) at 28 GB |
 | `mimir-cluster-min` | `3mm-1rs` | **component test bed**, not A–H — verifies Mimir cluster formation against shared object storage at 36 GB |
+| `mimir-ha-min` | `3es-3mm-1rs-1pg-3sn-3kf-1on-2mn-nl6` | **shape test bed**, not A–H — Deployment A's wiring at 50 GB on `tiny` nodes; proves the HA topology, measures nothing |
 
 **Interpretation notes:** B lists RRDTool without a Core, but RRD is a Core
 storage strategy, so `baseline`/B include `core` with the RRD strategy set at the

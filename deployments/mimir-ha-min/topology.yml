@@ -1,0 +1,65 @@
+name: mimir-ha-min
+description: >-
+  Shape test bed — Deployment A's wiring at sizes that fit the lab hypervisor.
+  Same components, counts, groups and subnets as mimir-ha, but on `tiny` nodes
+  plus the RustFS node that 3-node Mimir needs. NOT a benchmark topology: at
+  2 GB an Elasticsearch node gets a ~1 GB heap and 19 VMs oversubscribe 16
+  cores, so any number measured here describes nothing. It exists to prove the
+  HA wiring — 3 Sentinels, 3 Kafka, 3 Elasticsearch, 3 Mimir and a Core —
+  which mimir-ha cannot, needing 132 GB against a 62 GB host.
+roles:
+  elasticsearch:
+    count: 3
+    size: tiny
+    subnets: [mgmt, db]
+    groups: [elasticsearch, docker_engine]
+  mimir:
+    count: 3
+    size: tiny
+    subnets: [mgmt, db]
+    groups: [mimir, docker_engine]
+  rustfs:
+    count: 1
+    size: tiny
+    subnets: [mgmt, db]
+    groups: [rustfs]
+  database:
+    count: 1
+    size: tiny
+    subnets: [mgmt, db]
+    groups: [database]
+  sentinel:
+    count: 3
+    # Not tiny: Sentinel is a Karaf JVM and 2 GB is unlikely to start it.
+    size: small
+    subnets: [mgmt, db, kafka]
+    groups: [sentinel]
+  kafka:
+    count: 3
+    size: tiny
+    subnets: [mgmt, kafka]
+    groups: [message_broker, docker_engine, kafka_ui]
+  core:
+    count: 1
+    # OpenNMS needs real heap even to start; the rest of the bed is shrunk
+    # around it.
+    size: medium
+    subnets: [mgmt, db, kafka]
+    groups: [core]
+  minion:
+    count: 2
+    size: tiny
+    subnets: [mgmt, kafka, sim]
+    routes: { sim: net_sim }
+    groups: [minion]
+  loadgen:
+    count: 1
+    size: tiny
+    subnets: [mgmt, sim]
+    groups: [net_sim, docker_engine]
+  monitoring:
+    count: 1
+    size: tiny
+    subnets: [mgmt, external]
+    public_ip: true
+    groups: [mon_servers, docker_engine, grafana]
