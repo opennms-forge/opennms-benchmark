@@ -1,0 +1,175 @@
+---
+{# managed by the traefik role — edit the template, not the rendered file
+
+   Back ends split two ways:
+
+   * Services co-located on this monitoring VM reach the host through
+     host.docker.internal and are provider-independent.
+   * OpenNMS, Kafka UI and nl6 live on other VMs. Their addresses differ per
+     provider (kvm derives them from per-role blocks, azure reads fixed values
+     out of lab.tfvars — see #161), so they are resolved from the inventory
+     rather than written down here.
+
+   lab_mgmt_ip is emitted by the kvm topology inventory and is always the in-lab
+   management address. Azure/Proxmox/VMware do not set it, and there ansible_host
+   already is that address — hence the default(). The distinction matters because
+   ansible_host for the jump host is its *external* address.
+
+   Many deployments do not run all three roles — several specs have no core at
+   all, and net_sim is rarer still — so each router and service is emitted only
+   when its group is populated. The previous static file advertised all three
+   unconditionally, which left routes pointing at addresses that belonged to a
+   different role or to no host at all.
+
+   Every member of a group becomes a load-balancer server, not just the first:
+   the mimir-ha shape beds run three Kafka UI nodes, and taking groups[...][0]
+   would silently route to one and ignore the rest.
+
+   default(..., true) rather than plain default(): the second argument makes it
+   fire on an empty value as well as an undefined one, otherwise an empty
+   lab_mgmt_ip renders as "http://:8980" — valid YAML, silently dead.
+#}
+{% set have_core = groups['core'] is defined and groups['core'] | length > 0 %}
+{% set have_kafka_ui = groups['kafka_ui'] is defined and groups['kafka_ui'] | length > 0 %}
+{% set have_net_sim = groups['net_sim'] is defined and groups['net_sim'] | length > 0 %}
+http:
+  routers:
+    app-starter:
+      rule: "Path(`/`) || PathPrefix(`/_next`)"
+      entryPoints:
+        - websecure
+      service: app-starter
+      tls: {}
+    grafana:
+      rule: "PathPrefix(`/grafana`)"
+      entryPoints:
+        - websecure
+      service: grafana
+      tls: {}
+    prometheus:
+      rule: "PathPrefix(`/prometheus`)"
+      entryPoints:
+        - websecure
+      service: prometheus
+      tls: {}
+    jaeger:
+      rule: "PathPrefix(`/jaeger`)"
+      entryPoints:
+        - websecure
+      service: jaeger
+      tls: {}
+{% if have_core %}
+    opennms:
+      rule: "PathPrefix(`/opennms`)"
+      entryPoints:
+        - websecure
+      service: opennms
+      tls: {}
+{% endif %}
+{% if have_kafka_ui %}
+    kafka:
+      rule: "PathPrefix(`/kafka`)"
+      entryPoints:
+        - websecure
+      service: kafka
+      tls: {}
+{% endif %}
+    pgadmin:
+      rule: "PathPrefix(`/pgadmin`)"
+      entryPoints:
+        - websecure
+      service: pgadmin
+      tls: {}
+    kibana:
+      rule: "PathPrefix(`/kibana`)"
+      entryPoints:
+        - websecure
+      service: kibana
+      middlewares:
+        - kibana-strip
+      tls: {}
+{% if have_net_sim %}
+    opensim:
+      rule: "PathPrefix(`/nl6`)"
+      entryPoints:
+        - websecure
+      service: opensim
+      middlewares:
+        - opensim-strip
+      tls: {}
+    opensim-assets:
+      rule: "PathPrefix(`/web`) || PathPrefix(`/api`) || Path(`/logo.png`)"
+      entryPoints:
+        - websecure
+      service: opensim
+      tls: {}
+{% endif %}
+  middlewares:
+    kibana-strip:
+      stripPrefix:
+        prefixes:
+          - /kibana
+{% if have_net_sim %}
+    opensim-strip:
+      stripPrefix:
+        prefixes:
+          - /nl6
+{% endif %}
+
+  services:
+    grafana:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3000"
+
+    prometheus:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:9090"
+
+    jaeger:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:16686"
+{% if have_core %}
+
+    opennms:
+      loadBalancer:
+        servers:
+{% for host in groups['core'] %}
+          - url: "http://{{ hostvars[host].lab_mgmt_ip | default(hostvars[host].ansible_host, true) }}:8980"
+{% endfor %}
+{% endif %}
+{% if have_kafka_ui %}
+
+    kafka:
+      loadBalancer:
+        servers:
+{% for host in groups['kafka_ui'] %}
+          - url: "http://{{ hostvars[host].lab_mgmt_ip | default(hostvars[host].ansible_host, true) }}:8080"
+{% endfor %}
+{% endif %}
+
+    pgadmin:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:5050"
+
+    kibana:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:5601"
+{% if have_net_sim %}
+
+    opensim:
+      loadBalancer:
+        servers:
+{% for host in groups['net_sim'] %}
+          - url: "http://{{ hostvars[host].lab_mgmt_ip | default(hostvars[host].ansible_host, true) }}:8080"
+{% endfor %}
+{% endif %}
+
+    app-starter:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3010"
