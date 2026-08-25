@@ -121,6 +121,67 @@ it was not tested. What can be said is that the model predicts coarse-cadence
 rates less well than it predicts the default, which is also the regime the
 documentation now advises against using.
 
+## Part 2: does a scenario's `rate` reach the wire? (nl6#456)
+
+The same lab, the same harness, after [nl6#461](https://github.com/labmonkeys-space/nl6/pull/461) made a flow scenario's `rate` set the record rate by sizing each participant's flow cache. Before it, `rate` set the tick cadence and the wire carried whatever the cache produced.
+
+Five `cisco_ios` participants, caches warmed to their profile population for 90s first — the state a real run starts from — then a scenario armed and started.
+
+| requested/device | window | wire/device | report says | deviation | capture loss |
+|---|---|---|---|---|---|
+| 0.5 | 180s | 0.51 | 0.47 | **+2.4 %** | 0 |
+| 2 | 120s | 1.89 | 1.80 | **−5.6 %** | 0 |
+| 4 | 120s | 3.30 | 3.26 | **−17.6 %** | 0 |
+| 8 | 120s | 7.16 | 6.68 | **−10.5 %** | 0 |
+
+**Pacing works, and is worse than the unit tests say.** Every cell tracks its request — before this change `rate` moved the wire not at all — and all four are sequence-continuous, so the shortfalls are real emission and not lost packets.
+
+But `TestFlowPacing_TickAchievesRateFromWarmCache` enforces 8 % and passes; the wire misses that at **rate 4 (−17.6 %)** and **rate 8 (−10.5 %)**, and the deviation is not monotonic in the rate. The unit test drives `Tick` against a real socket but with synthetic time and no MTU pagination, so something in the real path is not in the model. **Not diagnosed** — this is a finding, not a conclusion, and it is the third time on this code path that a probe agreed with a model while the wire disagreed with both.
+
+The report's own `achieved_per_device` reads 3–8 % below the wire in every cell, consistently. That is a smaller, separate discrepancy worth chasing on its own: the ledger counts at write-return, so it should if anything match or exceed the capture.
+
+### What this run cost, and the guard that came out of it
+
+Four scenario runs measured **nl6 v0.22.1** — the released container — before anyone noticed. The lab's ansible role installs nl6 as a **systemd service**, so `docker rm -f` is not enough: systemd restarts it within seconds, it re-binds `:8080`, and a hand-started binary exits with `address already in use` into a log nobody reads. Every symptom pointed elsewhere (`network is unreachable` from a netns that looked misconfigured).
+
+`run-cell.sh` now stops the unit and, more importantly, **asserts `/api/v1/version` is the build under test before measuring anything**. A measurement harness that cannot tell which binary answered is not measuring anything.
+
+The multi-device capture also broke the loss check: NetFlow sequence numbers are per exporter, and pooling five of them reported **−93 missing** — a negative loss. Grouped by source IP now.
+
+## Part 3: records claim a last-packet time the exporter has not reached
+
+`check-timestamps.py`, template-aware (the field offsets are not fixed, so the
+template flowset is read from the capture and data records decoded against it).
+
+| capture | records | LAST_SWITCHED ahead of SysUptime | max ahead |
+|---|---|---|---|
+| `cap-post-5s` | 867 | **71.5 %** | 89.5 s |
+| `s6-rate2-w120` | 782 | **71.7 %** | 89.2 s |
+| `s6-rate8-w120` | 1296 | **69.0 %** | 89.8 s |
+
+About seven records in ten state a last-packet time the exporter had not yet
+reached when it sent them, by as much as 90 seconds.
+
+**The mechanism is the active timeout, and the 90s is exactly what it predicts.**
+A flow sampled with a 120 s duration is capped and exported at the 30 s active
+timeout, but the record still carries the `EndMs` its full duration implies —
+90 s beyond. The cap truncates the flow's residency without truncating its
+claimed extent, and the byte and packet counts are not rescaled either.
+
+A collector computing `flowEnd = exportTime − (sysUptime − lastSwitched)` gets a
+timestamp in the future, and any bytes-per-second derived from the flow's own
+duration is wrong by `duration / active-timeout`.
+
+This was carried as a deferred finding from the nl6#457 review, which estimated
+75.7 % from the emission model. Measured: 69–72 %. It is **pre-existing** — not
+introduced by the pacing work — and unfixed; the numbers are here so a fix can be
+scoped against a measurement rather than an estimate.
+
+`cap-pre-5s` decoded only 4 records and is excluded: that run used a 10-minute
+template interval and the capture began after warm-up, so almost no template
+reached the file. A data record cannot be decoded without its template, which is
+itself worth knowing before designing a capture.
+
 ## Reproducing
 
 ```bash
