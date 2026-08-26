@@ -129,7 +129,7 @@ def tick_groups(rows, tick):
     current = 0
     previous = None
 
-    for timestamp, version, data_records, is_template, _, _, _ in rows:
+    for timestamp, version, data_records, _is_template, _, _, _ in rows:
         if version != NETFLOW_V9:
             continue
         # A template-only datagram carries no flow data. Counting it here would
