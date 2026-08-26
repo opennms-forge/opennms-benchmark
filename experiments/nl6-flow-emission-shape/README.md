@@ -65,14 +65,16 @@ Wire measurements, 300s window, one device:
 
 | cell | records/s | silent ticks | shape (records per emitting tick) |
 |---|---|---|---|
-| pre @ 5s | **6.07** | **40 of 54** | `128, 128, 129, 128, …` |
-| post @ 5s | **4.12** | **0 of 58** | `28, 40, 20, 21, 1, 24, 27, 6, 49, …` |
-| pre @ 30s | **6.09** | **42 of 58** † | `1, 128, 128, 128, 1, 128, …` |
-| post @ 30s | **3.03** | **0 of 8** | `129, 20, 110, 129, 14, 128, …` |
+| pre @ 5s | **6.05** | **43 of 54** | `128, 128, 128, 128, …` |
+| post @ 5s | **4.10** | **0 of 58** | `28, 40, 19, 21, 1, 24, 27, 6, 49, …` |
+| pre @ 30s | **6.07** | **46 of 58** † | `128, 128, 128, 128, …` |
+| post @ 30s | **3.02** | **0 of 8** | `128, 20, 110, 128, 14, 128, …` |
+
+Figures corrected in opennms-benchmark#6: `analyse-pcap.py` was counting NetFlow v9 Template FlowSets as data records. The rate effect is under half a percent here, but the **shape** effect was categorical — see below.
 
 † The `pre @ 30s` row is analysed at **5s**, not 30s, because that is the cadence
 it actually ran at — the flag was inert, which is the defect being measured.
-Bucketing it at the 30s it was *asked* for reports `0 of 11` silent and hides the
+Bucketing it at the 30s it was *asked* for reports `0 of 12` silent and hides the
 sawtooth, since a 30s window always contains one of the 5s bursts. Reporting a
 cell at a cadence it never used is how the inert flag would have escaped notice
 a second time.
@@ -80,26 +82,33 @@ a second time.
 ### Three claims, all confirmed
 
 **1. The flag was inert, and now is not.** Pre-change, 5s and 30s produce the
-same rate (6.07 vs 6.09) — setting the flag changed nothing on the wire, which
+same rate (6.05 vs 6.07) — setting the flag changed nothing on the wire, which
 is nl6#446 observed directly rather than inferred from a call graph.
-Post-change the same comparison gives 4.12 vs 3.03: the cadence now reaches the
+Post-change the same comparison gives 4.10 vs 3.02: the cadence now reaches the
 ticker.
 
-**2. The cohort sawtooth was real and is gone.** Pre-change, **40 of 54 ticks
-emitted nothing** — roughly 3 in 4, exactly the predicted period — and the
-emitting ticks carried the entire 128-flow cache at once. Post-change, **zero**
-silent ticks at either cadence.
+**2. The cohort sawtooth was real and is gone.** Pre-change, **43 of 54 ticks
+emitted nothing** — roughly 4 in 5 — and every emitting tick carried the entire
+128-flow cache at once: `peak/mean` is exactly **1.00**, a dead-flat sawtooth.
+Post-change, **zero** silent ticks at either cadence.
+
+The corrected numbers make this claim sharper than the original measurement did.
+Before opennms-benchmark#6, template-only datagrams were counted as ticks that
+emitted one record, which both hid three silent ticks and dragged the mean from
+128 down to 100.9 — manufacturing an apparent 1.28x burst ratio in a series that
+is perfectly uniform. At 30s the same artifact produced a phantom `257` (two
+datagrams, one carrying a template) and a 1.83x ratio.
 
 **3. The announced volume change holds.** Measured ratio at the default cadence
-is **0.679**, against the 0.66 published in nl6's `flow-export.md`.
+is **0.678**, against the 0.66 published in nl6's `flow-export.md`.
 
 ### Model versus wire
 
 | cell | model | wire | delta |
 |---|---|---|---|
-| pre @ 5s | 6.40 | 6.07 | −5.2 % |
-| post @ 5s | 4.24 | 4.12 | −2.8 % |
-| post @ 30s | 3.63 | 3.03 | **−16.5 %** |
+| pre @ 5s | 6.40 | 6.05 | −5.5 % |
+| post @ 5s | 4.24 | 4.10 | −3.3 % |
+| post @ 30s | 3.63 | 3.02 | **−16.8 %** |
 
 The model runs slightly hot everywhere, which is expected: it advances time in
 exact tick increments with no scheduling jitter, no socket latency and no
