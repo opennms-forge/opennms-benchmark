@@ -89,11 +89,38 @@ locals {
   # excluded it, whatever a given Terraform version does about short-circuiting.
   unresolved_named_routes = distinct(flatten([
     for key, n in local.nodes : [
-      for subnet in keys(local.node_routes[key]) :
+      for subnet in try(keys(local.node_routes[key]), []) :
       "${lookup(local.spec_role_for, n.prole, n.prole)}.${subnet} -> \"${tostring(local.node_routes[key][subnet])}\" needs a \"${lookup(local.spec_role_for, var.named_route_spec[tostring(local.node_routes[key][subnet])].role, var.named_route_spec[tostring(local.node_routes[key][subnet])].role)}\" role with a \"${var.named_route_spec[tostring(local.node_routes[key][subnet])].subnet}\" NIC"
       if contains(keys(var.named_route_spec), try(tostring(local.node_routes[key][subnet]), "")) && try(local.named_routes[tostring(local.node_routes[key][subnet])].via, null) == null
     ]
   ]))
+
+  # Every address any node holds, on any subnet. Derived from the node model
+  # rather than from a provider's rendered topology, so the topology check can
+  # assert against it identically on every spec-driven provider -- the check
+  # previously read a kvm-only local and so could only ever run there.
+  all_addresses = flatten([
+    for key, addrs in local.node_address : [
+      for subnet, a in addrs : a if a != null
+    ]
+  ])
+
+  # Disk per node, in priority order: what the spec asks for, then the per-role
+  # pin, then a flat default. A spec can therefore size its own disks -- which is
+  # what lets a small topology actually be small, rather than inheriting a
+  # benchmark-scale core disk it will never fill.
+  #
+  # The last entry is deliberately NOT derived from the size class. See
+  # disk_default_gb: doing so resizes every previously unpinned role, and a
+  # capacity change replaces a libvirt volume.
+  disk_gb = {
+    for key, n in local.nodes :
+    key => try(
+      n.cfg.disk_gb,
+      var.disk_sizes_gb[n.prole],
+      var.disk_default_gb,
+    )
+  }
 
   # Guest hostnames are a cross-provider contract: deployment overlays reference
   # them literally (vm-single points at vm-benchmark-01), so they are built here

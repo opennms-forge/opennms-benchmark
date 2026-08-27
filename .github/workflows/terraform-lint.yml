@@ -142,6 +142,49 @@ jobs:
       - name: make validate-extra-roots
         run: make validate-extra-roots
 
+  # `terraform validate` above checks types and syntax. It does not evaluate
+  # locals against real values, and resource preconditions are plan-time only, so
+  # a deployment spec whose route points at a node that does not exist passes
+  # every other gate here -- which is how a hardcoded next hop stayed wrong until
+  # it was found by hand (#171). This renders every spec with `terraform console`
+  # and asserts the result.
+  #
+  # It renders through every spec-driven provider, not just kvm, so aws's and
+  # proxmox's copies of the invariants are asserted too. Timeout is generous
+  # because that is 3 providers x 15 specs plus fixtures, each a separate
+  # `terraform console` invocation.
+  #
+  # No credentials and no hypervisor: console evaluates the provider's own locals
+  # without contacting one, and the script passes placeholder values for every
+  # variable rather than reading a gitignored <provider>.tfvars. It initialises
+  # each root on demand, so this job runs the make target directly like every
+  # other. Each render is bounded, so a hang reports a named per-spec timeout
+  # instead of sitting until the job limit.
+  validate-topology:
+    name: Deployment Topologies
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      # terraform_wrapper: false is load-bearing here and nowhere else in this
+      # workflow. The action installs a Node wrapper around the terraform binary
+      # to capture stdout/stderr for step outputs, and that wrapper does not
+      # forward stdin. This is the only job that pipes into terraform:
+      # `printf "$EXPR" | terraform console`. With the wrapper, console gets no
+      # input and waits for it, so every render produced no output and was killed
+      # at the per-spec timeout -- which is why this check has never passed in CI
+      # while passing in 22s on a laptop, on this branch and on #264 alike.
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e  # v4.0.1
+        with:
+          terraform_version: "~1.5"
+          terraform_wrapper: false
+
+      - name: make validate-topology
+        run: make validate-topology
+
   tflint:
     name: TFLint
     runs-on: ubuntu-24.04

@@ -73,6 +73,10 @@ locals {
   named_routes            = module.topology.named_routes
   unresolved_named_routes = module.topology.unresolved_named_routes
 
+  # Consumed by validate-topology.sh, which asserts no address is issued twice
+  # and that every named-route next hop is held by a node in the same spec.
+  all_addresses = module.topology.all_addresses
+
   requested_subnets = distinct(flatten([for key, n in local.nodes : n.cfg.subnets]))
   vpc_subnets       = [for s in local.requested_subnets : s if contains(keys(local.subnet_cidr), s)]
   needs_public      = contains(local.requested_subnets, "external")
@@ -98,7 +102,7 @@ locals {
       name    = module.topology.vm_name[key]
       prole   = n.prole
       size    = n.cfg.size
-      disk_gb = local.smoke ? min(lookup(var.disk_sizes_gb, n.prole, 30), var.smoke_max_disk_gb) : lookup(var.disk_sizes_gb, n.prole, 30)
+      disk_gb = local.smoke ? min(module.topology.disk_gb[key], var.smoke_max_disk_gb) : module.topology.disk_gb[key]
       public  = try(n.cfg.public_ip, false)
       subnets = n.cfg.subnets
       # nl6 owns the simulated range's host routing: it runs privileged with
@@ -189,6 +193,12 @@ locals {
   onms_stack_children = ["database", "core", "message_broker", "elasticsearch", "minion", "sentinel", "grafana"]
 
   # ── spec compatibility ────────────────────────────────────────────────────
+  # Reasons this spec cannot run on this provider, under a name every
+  # spec-driven provider defines. The precondition below turns it into a plan
+  # error; validate-topology.sh reads it to distinguish "unprovisionable here"
+  # from "broken", which a locals render cannot learn from a precondition.
+  spec_unsupported = local.unsupported_lab
+
   unsupported_lab = [
     for key, n in local.nodes :
     "${lookup(module.topology.spec_role_for, n.prole, n.prole)} declares the 'lab' subnet"
@@ -215,8 +225,9 @@ locals {
 module "topology" {
   source = "../modules/topology"
 
-  spec        = local.spec
-  subnet_cidr = local.subnet_cidr
+  spec          = local.spec
+  subnet_cidr   = local.subnet_cidr
+  disk_sizes_gb = var.disk_sizes_gb
 
   named_route_spec = {
     net_sim = { to = var.net_sim_cidr, role = "netsim", subnet = "sim" }

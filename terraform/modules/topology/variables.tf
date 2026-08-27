@@ -96,3 +96,32 @@ variable "role_block_base" {
   default     = 4
   description = "First host offset used for allocation. 0 is the network address and 1 the mgmt gateway; 2-3 are left spare."
 }
+
+# ── disk sizing ──────────────────────────────────────────────────────────────
+
+variable "disk_sizes_gb" {
+  type        = map(number)
+  default     = {}
+  description = "Provider role -> disk GiB. The existing per-role pins, kept as-is so nothing already provisioned is resized."
+}
+
+variable "disk_default_gb" {
+  type        = number
+  default     = 30
+  description = <<-EOT
+    Disk for a role with no pin in disk_sizes_gb and no disk_gb in the spec.
+
+    A flat number rather than a size-class map, deliberately. Deriving it from
+    the t-shirt size looks obviously better and is destructive: the previously
+    unpinned roles (rrd, mimir, victoriametrics, rustfs, sentinel) all sat at
+    30 GiB, and a class-derived value moves every one of them. On libvirt that
+    changes `capacity` on libvirt_volume.os, which replaces the volume and
+    destroys the lab's disk -- the failure path of #261. Worse in the shrink
+    direction: mimir-ha-min's tiny roles would go 30 -> 20, and EBS refuses to
+    reduce a root volume, so an aws apply errors out rather than merely losing
+    data.
+
+    A deployment that wants different disks says so with disk_gb per role, which
+    is the first entry in the precedence and cannot surprise an existing lab.
+  EOT
+}
